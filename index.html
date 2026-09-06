@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Tarot Journal">
+  <title>Celestial Tarot - Gemini 3.5 Flash</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+    body {
+      background-color: #f3f7f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .card-shadow {
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+    }
+  </style>
+</head>
+<body class="text-gray-800 pb-12 min-h-screen">
+
+  <header class="pt-12 pb-4 px-6 bg-white/60 backdrop-blur-md sticky top-0 z-10 border-b border-emerald-100/50">
+    <div class="max-w-md mx-auto flex justify-between items-center">
+      <div>
+        <h1 class="text-2xl font-serif font-bold text-emerald-950">Celestial Tarot</h1>
+        <p class="text-xs text-emerald-700/70 font-medium">Powered by Gemini 3.5 Flash</p>
+      </div>
+      <button onclick="toggleKeyModal()" class="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-full hover:bg-emerald-200 transition-all flex items-center gap-1">
+        🔑 Key Status
+      </button>
+    </div>
+  </header>
+
+  <main class="max-w-md mx-auto px-4 pt-6 space-y-6">
+
+    <section class="bg-white rounded-3xl p-6 card-shadow border border-emerald-50">
+      
+      <div class="flex justify-between items-center mb-5">
+        <label for="entry-date" class="text-xs font-semibold uppercase tracking-wider text-emerald-800">Select Date</label>
+        <input type="date" id="entry-date" class="bg-emerald-50/60 border border-emerald-200 rounded-lg px-3 py-1.5 text-sm text-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-400">
+      </div>
+
+      <div class="mb-5">
+        <label for="card-select" class="block text-xs font-semibold uppercase tracking-wider text-emerald-800 mb-2">Daily Card Draw (78 Cards)</label>
+        <select id="card-select" class="w-full bg-emerald-50/60 border border-emerald-200 rounded-xl px-3 py-2.5 text-sm text-emerald-900 focus:outline-none focus:ring-2 focus:ring-emerald-400">
+          <option value="">-- Select a Rider-Waite Card --</option>
+        </select>
+      </div>
+
+      <div id="reading-display-container" class="hidden border-t border-emerald-100 pt-5 space-y-4">
+        
+        <div class="flex flex-col items-center justify-center p-4 bg-emerald-50/30 rounded-2xl border border-emerald-100/80">
+          <img id="card-image" src="" alt="Tarot Card Illustration" class="h-56 rounded-lg shadow-md object-contain mb-2">
+          <h3 id="card-title" class="text-sm font-serif font-bold text-emerald-950"></h3>
+        </div>
+
+        <div id="ai-analysis-container" class="pt-2">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-semibold uppercase tracking-wider text-emerald-800">Daily Reading</span>
+            <span id="ai-status-badge" class="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">Saved Reading</span>
+          </div>
+          <div id="ai-loading" class="hidden py-6 text-center text-xs text-emerald-700 italic">
+            🔮 Generating reading via Gemini 3.5 Flash...
+          </div>
+          <div id="ai-analysis-text" class="text-sm leading-relaxed text-gray-700 font-serif bg-emerald-50/40 p-4 rounded-xl border border-emerald-100/60 whitespace-pre-line space-y-2"></div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <section class="bg-white rounded-3xl p-6 card-shadow border border-emerald-50 space-y-4">
+      <div class="flex justify-between items-center">
+        <h2 class="text-lg font-serif font-bold text-emerald-950">Stored Card History</h2>
+        <button onclick="exportToPDF()" class="text-xs px-3 py-1.5 bg-emerald-100 text-emerald-800 rounded-lg hover:bg-emerald-200 transition-colors font-medium flex items-center gap-1">
+          📥 Export PDF
+        </button>
+      </div>
+
+      <div id="history-list" class="space-y-3 max-h-60 overflow-y-auto pr-1">
+        </div>
+    </section>
+
+    <section class="bg-gradient-to-br from-emerald-900 to-slate-900 rounded-3xl p-6 text-white shadow-xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-serif font-bold text-emerald-200">Astrological Synergy</h2>
+        <span class="text-xs text-emerald-300/80 bg-white/10 px-2 py-1 rounded-md">Chart Linked</span>
+      </div>
+
+      <div class="flex flex-col items-center justify-center p-4 bg-emerald-950/50 rounded-2xl border border-emerald-500/30">
+        <svg viewBox="0 0 200 200" class="w-40 h-40">
+          <circle cx="100" cy="100" r="90" fill="none" stroke="#6ee7b7" stroke-width="2" opacity="0.4"/>
+          <circle cx="100" cy="100" r="65" fill="none" stroke="#34d399" stroke-width="1.5" opacity="0.6"/>
+          <circle cx="100" cy="100" r="40" fill="none" stroke="#a7f3d0" stroke-width="1" opacity="0.3"/>
+          <line x1="10" y1="100" x2="190" y2="100" stroke="#6ee7b7" stroke-width="1" opacity="0.5"/>
+          <line x1="100" y1="10" x2="100" y2="190" stroke="#6ee7b7" stroke-width="1" opacity="0.5"/>
+          <line x1="36" y1="36" x2="164" y2="164" stroke="#6ee7b7" stroke-width="0.7" opacity="0.3"/>
+          <line x1="164" y1="36" x2="36" y2="164" stroke="#6ee7b7" stroke-width="0.7" opacity="0.3"/>
+          <circle cx="50" cy="60" r="4" fill="#fcd34d"/>
+          <circle cx="140" cy="70" r="4" fill="#e0e7ff"/>
+          <circle cx="80" cy="145" r="3" fill="#f43f5e"/>
+        </svg>
+        <p class="text-[11px] text-center text-emerald-300 font-medium mt-2">Sun: Scorpio | Moon: Cancer | ASC: Gemini</p>
+      </div>
+
+      <button onclick="generateAIAstroSynergy()" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
+        <span>✨</span> Analyze Card Trends vs. Natal Chart
+      </button>
+
+      <div id="astro-loading" class="hidden text-center text-xs text-emerald-200 italic py-2">
+        🪐 Gemini 3.5 Flash is mapping your stored history...
+      </div>
+
+      <div id="astro-synergy-result" class="hidden text-xs leading-relaxed text-emerald-100/90 font-serif italic bg-white/10 p-4 rounded-xl border border-white/10 mt-3 whitespace-pre-line">
+      </div>
+    </section>
+
+  </main>
+
+  <div id="key-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl space-y-4">
+      <h3 class="text-base font-serif font-bold text-emerald-950">Gemini API Key Setup</h3>
+      <p class="text-xs text-gray-600 leading-relaxed">
+        Paste your Google AI Studio API key below. It will be permanently stored in phone database memory.
+      </p>
+      <input type="password" id="gemini-key-input" placeholder="AIzaSy..." class="w-full bg-emerald-50/60 border border-emerald-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-400">
+      <div class="flex gap-2">
+        <button onclick="saveApiKey()" class="flex-1 py-2 bg-emerald-800 text-white text-xs font-bold rounded-xl">Save Key</button>
+        <button onclick="toggleKeyModal()" class="px-4 py-2 bg-gray-100 text-gray-600 text-xs font-bold rounded-xl">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const RIDER_WAITE_DECK = [
+      { name: "The Fool", img: "https://upload.wikimedia.org/wikipedia/commons/9/90/RWS_Tarot_00_Fool.jpg", arcana: "Major" },
+      { name: "The Magician", img: "https://upload.wikimedia.org/wikipedia/commons/d/de/RWS_Tarot_01_Magician.jpg", arcana: "Major" },
+      { name: "The High Priestess", img: "https://upload.wikimedia.org/wikipedia/commons/8/88/RWS_Tarot_02_High_Priestess.jpg", arcana: "Major" },
+      { name: "The Empress", img: "https://upload.wikimedia.org/wikipedia/commons/d/d2/RWS_Tarot_03_Empress.jpg", arcana: "Major" },
+      { name: "The Emperor", img: "https://upload.wikimedia.org/wikipedia/commons/c/c3/RWS_Tarot_04_Emperor.jpg", arcana: "Major" },
+      { name: "The Hierophant", img: "https://upload.wikimedia.org/wikipedia/commons/8/8d/RWS_Tarot_05_Hierophant.jpg", arcana: "Major" },
+      { name: "The Lovers", img: "https://upload.wikimedia.org/wikipedia/commons/3/3a/TheLovers.jpg", arcana: "Major" },
+      { name: "The Chariot", img: "https://upload.wikimedia.org/wikipedia/commons/9/9b/RWS_Tarot_07_Chariot.jpg", arcana: "Major" },
+      { name: "Strength", img: "https://upload.wikimedia.org/wikipedia/commons/f/f5/RWS_Tarot_08_Strength.jpg", arcana: "Major" },
+      { name: "The Hermit", img: "https://upload.wikimedia.org/wikipedia/commons/4/4d/RWS_Tarot_09_Hermit.jpg", arcana: "Major" },
+      { name: "Wheel of Fortune", img: "https://upload.wikimedia.org/wikipedia/commons/3/3c/RWS_Tarot_10_Wheel_of_Fortune.jpg", arcana: "Major" },
+      { name: "Justice", img: "https://upload.wikimedia.org/wikipedia/commons/e/e0/RWS_Tarot_11_Justice.jpg", arcana: "Major" },
+      { name: "The Hanged Man", img: "https://upload.wikimedia.org/wikipedia/commons/2/2b/RWS_Tarot_12_Hanged_Man.jpg", arcana: "Major" },
+      { name: "Death", img: "https://upload.wikimedia.org/wikipedia/commons/d/d7/RWS_Tarot_13_Death.jpg", arcana: "Major" },
+      { name: "Temperance", img: "https://upload.wikimedia.org/wikipedia/commons/f/f8/RWS_Tarot_14_Temperance.jpg", arcana: "Major" },
+      { name: "The Devil", img: "https://upload.wikimedia.org/wikipedia/commons/5/55/RWS_Tarot_15_Devil.jpg", arcana: "Major" },
+      { name: "The Tower", img: "https://upload.wikimedia.org/wikipedia/commons/5/53/RWS_Tarot_16_Tower.jpg", arcana: "Major" },
+      { name: "The Star", img: "https://upload.wikimedia.org/wikipedia/commons/d/db/RWS_Tarot_17_Star.jpg", arcana: "Major" },
+      { name: "The Moon", img: "https://upload.wikimedia.org/wikipedia/commons/7/7f/RWS_Tarot_18_Moon.jpg", arcana: "Major" },
+      { name: "The Sun", img: "https://upload.wikimedia.org/wikipedia/commons/1/17/RWS_Tarot_19_Sun.jpg", arcana: "Major" },
+      { name: "Judgement", img: "https://upload.wikimedia.org/wikipedia/commons/d/dd/RWS_Tarot_20_Judgement.jpg", arcana: "Major" },
+      { name: "The World", img: "https://upload.wikimedia.org/wikipedia/commons/ff/ff/RWS_Tarot_21_World.jpg", arcana: "Major" },
+      { name: "Ace of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/1/11/Wands01.jpg", arcana: "Wands" },
+      { name: "Two of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/0/0f/Wands02.jpg", arcana: "Wands" },
+      { name: "Three of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/ff/ff/Wands03.jpg", arcana: "Wands" },
+      { name: "Four of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/a/a4/Wands04.jpg", arcana: "Wands" },
+      { name: "Five of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/9/9d/Wands05.jpg", arcana: "Wands" },
+      { name: "Six of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/3/3b/Wands06.jpg", arcana: "Wands" },
+      { name: "Seven of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/e/e4/Wands07.jpg", arcana: "Wands" },
+      { name: "Eight of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/6/6b/Wands08.jpg", arcana: "Wands" },
+      { name: "Nine of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/4/4d/Wands09.jpg", arcana: "Wands" },
+      { name: "Ten of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/0/0b/Wands10.jpg", arcana: "Wands" },
+      { name: "Page of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/6/6a/Wands11.jpg", arcana: "Wands" },
+      { name: "Knight of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/1/16/Wands12.jpg", arcana: "Wands" },
+      { name: "Queen of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/0/0d/Wands13.jpg", arcana: "Wands" },
+      { name: "King of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/ce/ce/Wands14.jpg", arcana: "Wands" },
+      { name: "Ace of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/3/36/Cups01.jpg", arcana: "Cups" },
+      { name: "Two of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/f/f8/Cups02.jpg", arcana: "Cups" },
+      { name: "Three of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/7/7a/Cups03.jpg", arcana: "Cups" },
+      { name: "Four of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/3/35/Cups04.jpg", arcana: "Cups" },
+      { name: "Five of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/d/d7/Cups05.jpg", arcana: "Cups" },
+      { name: "Six of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/1/17/Cups06.jpg", arcana: "Cups" },
+      { name: "Seven of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/a/ae/Cups07.jpg", arcana: "Cups" },
+      { name: "Eight of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/6/60/Cups08.jpg", arcana: "Cups" },
+      { name: "Nine of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/2/24/Cups09.jpg", arcana: "Cups" },
+      { name: "Ten of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/8/84/Cups10.jpg", arcana: "Cups" },
+      { name: "Page of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/a/ad/Cups11.jpg", arcana: "Cups" },
+      { name: "Knight of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/fa/fa/Cups12.jpg", arcana: "Cups" },
+      { name: "Queen of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/6/62/Cups13.jpg", arcana: "Cups" },
+      { name: "King of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/0/04/Cups14.jpg", arcana: "Cups" },
+      { name: "Ace of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/1/1a/Swords01.jpg", arcana: "Swords" },
+      { name: "Two of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/9/9e/Swords02.jpg", arcana: "Swords" },
+      { name: "Three of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/0/02/Swords03.jpg", arcana: "Swords" },
+      { name: "Four of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/b/bf/Swords04.jpg", arcana: "Swords" },
+      { name: "Five of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/2/23/Swords05.jpg", arcana: "Swords" },
+      { name: "Six of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/2/29/Swords06.jpg", arcana: "Swords" },
+      { name: "Seven of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/3/34/Swords07.jpg", arcana: "Swords" },
+      { name: "Eight of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/a/a7/Swords08.jpg", arcana: "Swords" },
+      { name: "Nine of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/2/2f/Swords09.jpg", arcana: "Swords" },
+      { name: "Ten of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/d/d4/Swords10.jpg", arcana: "Swords" },
+      { name: "Page of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/4/4c/Swords11.jpg", arcana: "Swords" },
+      { name: "Knight of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/b/b0/Swords12.jpg", arcana: "Swords" },
+      { name: "Queen of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/d/d4/Swords13.jpg", arcana: "Swords" },
+      { name: "King of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/3/33/Swords14.jpg", arcana: "Swords" },
+      { name: "Ace of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/f/fd/Pents01.jpg", arcana: "Pentacles" },
+      { name: "Two of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/9/9f/Pents02.jpg", arcana: "Pentacles" },
+      { name: "Three of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/4/42/Pents03.jpg", arcana: "Pentacles" },
+      { name: "Four of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/3/3b/Pents04.jpg", arcana: "Pentacles" },
+      { name: "Five of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/9/96/Pents05.jpg", arcana: "Pentacles" },
+      { name: "Six of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/a/a6/Pents06.jpg", arcana: "Pentacles" },
+      { name: "Seven of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/6/6a/Pents07.jpg", arcana: "Pentacles" },
+      { name: "Eight of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/4/49/Pents08.jpg", arcana: "Pentacles" },
+      { name: "Nine of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/f/f0/Pents09.jpg", arcana: "Pentacles" },
+      { name: "Ten of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/4/42/Pents10.jpg", arcana: "Pentacles" },
+      { name: "Page of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/e/ec/Pents11.jpg", arcana: "Pentacles" },
+      { name: "Knight of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/d/d5/Pents12.jpg", arcana: "Pentacles" },
+      { name: "Queen of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/8/88/Pents13.jpg", arcana: "Pentacles" },
+      { name: "King of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/1/1c/Pents14.jpg", arcana: "Pentacles" }
+    ];
+
+    // --- INDEXEDDB STORAGE SYSTEM FOR IOS SAFARI HOME SCREEN APPS ---
+    const DB_NAME = "CelestialTarotDB";
+    const HISTORY_STORE = "card_history";
+    const SETTINGS_STORE = "user_settings";
+    let db = null;
+    let journalData = {};
+    let savedApiKeyVal = "";
+
+    function initDB() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, 2);
+
+        request.onupgradeneeded = (e) => {
+          const dbInstance = e.target.result;
+          if (!dbInstance.objectStoreNames.contains(HISTORY_STORE)) {
+            dbInstance.createObjectStore(HISTORY_STORE, { keyPath: "date" });
+          }
+          if (!dbInstance.objectStoreNames.contains(SETTINGS_STORE)) {
+            dbInstance.createObjectStore(SETTINGS_STORE, { keyPath: "key" });
+          }
+        };
+
+        request.onsuccess = (e) => {
+          db = e.target.result;
+          resolve(db);
+        };
+
+        request.onerror = (e) => {
+          console.error("IndexedDB error:", e.target.error);
+          reject(e.target.error);
+        };
+      });
+    }
+
+    async function loadAllFromDB() {
+      if (!db) await initDB();
+      return new Promise((resolve) => {
+        const tx = db.transaction([HISTORY_STORE, SETTINGS_STORE], "readonly");
+        
+        // Load Cards History
+        const historyStore = tx.objectStore(HISTORY_STORE);
+        const historyReq = historyStore.getAll();
+        historyReq.onsuccess = () => {
+          journalData = {};
+          historyReq.result.forEach(item => {
+            journalData[item.date] = item.data;
+          });
+        };
+
+        // Load API Key
+        const settingsStore = tx.objectStore(SETTINGS_STORE);
+        const keyReq = settingsStore.get("gemini_api_key");
+        keyReq.onsuccess = () => {
+          if (keyReq.result) {
+            savedApiKeyVal = keyReq.result.value;
+            document.getElementById("gemini-key-input").value = savedApiKeyVal;
+          }
+        };
+
+        tx.oncomplete = () => {
+          resolve();
+        };
+      });
+    }
+
+    async function saveCardToDB(dateStr, entryData) {
+      if (!db) await initDB();
+      const tx = db.transaction(HISTORY_STORE, "readwrite");
+      tx.objectStore(HISTORY_STORE).put({ date: dateStr, data: entryData });
+    }
+
+    async function deleteCardFromDB(dateStr) {
+      if (!db) await initDB();
+      const tx = db.transaction(HISTORY_STORE, "readwrite");
+      tx.objectStore(HISTORY_STORE).delete(dateStr);
+    }
+
+    async function saveKeyToDB(keyVal) {
+      if (!db) await initDB();
+      const tx = db.transaction(SETTINGS_STORE, "readwrite");
+      tx.objectStore(SETTINGS_STORE).put({ key: "gemini_api_key", value: keyVal });
+      savedApiKeyVal = keyVal;
+    }
+
+    // --- MAIN APP LOGIC ---
+    document.addEventListener("DOMContentLoaded", async () => {
+      const today = new Date().toISOString().split('T')[0];
+      const dateInput = document.getElementById("entry-date");
+      dateInput.value = today;
+
+      populateDropdown();
+
+      // Retrieve permanently stored history and key from IndexedDB
+      try {
+        await initDB();
+        await loadAllFromDB();
+      } catch (err) {
+        console.warn("Falling back to localStorage:", err);
+        journalData = JSON.parse(localStorage.getItem('tarot_journal_db')) || {};
+        savedApiKeyVal = localStorage.getItem('gemini_api_key') || "";
+      }
+
+      dateInput.addEventListener("change", loadEntryForDate);
+      document.getElementById("card-select").addEventListener("change", handleCardSelect);
+
+      loadEntryForDate();
+      renderHistory();
+    });
+
+    function toggleKeyModal() {
+      document.getElementById("key-modal").classList.toggle("hidden");
+    }
+
+    async function saveApiKey() {
+      const key = document.getElementById("gemini-key-input").value.trim();
+      await saveKeyToDB(key);
+      localStorage.setItem('gemini_api_key', key); // Fallback copy
+      toggleKeyModal();
+      alert("API Key permanently saved to iOS device database!");
+    }
+
+    function populateDropdown() {
+      const selectEl = document.getElementById("card-select");
+      const categories = ["Major", "Wands", "Cups", "Swords", "Pentacles"];
+      categories.forEach(cat => {
+        const optgroup = document.createElement("optgroup");
+        optgroup.label = cat === "Major" ? "Major Arcana" : `Suit of ${cat}`;
+        RIDER_WAITE_DECK.filter(c => c.arcana === cat).forEach(card => {
+          const opt = document.createElement("option");
+          opt.value = card.name;
+          opt.textContent = card.name;
+          optgroup.appendChild(opt);
+        });
+        selectEl.appendChild(optgroup);
+      });
+    }
+
+    async function handleCardSelect() {
+      const selectedName = document.getElementById("card-select").value;
+      const selectedDate = document.getElementById("entry-date").value;
+
+      if (!selectedName) {
+        delete journalData[selectedDate];
+        await deleteCardFromDB(selectedDate);
+        loadEntryForDate();
+        renderHistory();
+        return;
+      }
+
+      const cardObj = RIDER_WAITE_DECK.find(c => c.name === selectedName);
+      
+      document.getElementById("reading-display-container").classList.remove("hidden");
+      document.getElementById("card-image").src = cardObj.img;
+      document.getElementById("card-title").innerText = cardObj.name;
+      document.getElementById("ai-analysis-text").innerText = "";
+      document.getElementById("ai-loading").classList.remove("hidden");
+
+      const aiAnalysis = await fetchGeminiCardReading(selectedName);
+
+      document.getElementById("ai-loading").classList.add("hidden");
+
+      const entryData = {
+        card: cardObj,
+        analysis: aiAnalysis,
+        timestamp: new Date().toISOString()
+      };
+
+      journalData[selectedDate] = entryData;
+
+      // Save to IndexedDB
+      await saveCardToDB(selectedDate, entryData);
+      
+      loadEntryForDate();
+      renderHistory();
+    }
+
+    async function fetchGeminiCardReading(cardName) {
+      const apiKey = savedApiKeyVal || localStorage.getItem('gemini_api_key');
+      if (!apiKey) {
+        return `⚠️ API Key Missing:\nClick '🔑 Key Status' above to paste your key and save it permanently.`;
+      }
+
+      const systemInstruction = `Act as a wise, warm, and experienced tarot reader. Avoid heavy occult or esoteric jargon. Structure your response into these exact short sections:
+
+**The Vibe:** One simple sentence capturing the overall energy of the card.
+
+**What It Means:** A brief, everyday explanation of the card's meaning.
+
+**Today's Focus:** How I can apply this energy to my day today.
+
+**A Daily Action:** One concrete, simple thing I can do or avoid today.
+
+**A Short Affirmation:** A one-sentence positive thought to keep in mind.`;
+
+      const userPrompt = `Analyse today's tarot card draw: "${cardName}".`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
+
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: 'user',
+                parts: [{ text: `${systemInstruction}\n\n${userPrompt}` }]
+              }
+            ]
+          })
+        });
+
+        const data = await res.json();
+        if (data.error) {
+          return `⚠️ Gemini API Error (${data.error.code}): ${data.error.message}`;
+        }
+
+        return data.candidates[0].content.parts[0].text;
+      } catch (err) {
+        console.error(err);
+        return `⚠️ Network error attempting to contact Gemini API.`;
+      }
+    }
+
+    function loadEntryForDate() {
+      const selectedDate = document.getElementById("entry-date").value;
+      const entry = journalData[selectedDate];
+
+      const selectEl = document.getElementById("card-select");
+      const displayContainer = document.getElementById("reading-display-container");
+      const imgEl = document.getElementById("card-image");
+      const titleEl = document.getElementById("card-title");
+      const analysisText = document.getElementById("ai-analysis-text");
+
+      if (entry) {
+        selectEl.value = entry.card.name;
+        imgEl.src = entry.card.img;
+        titleEl.innerText = entry.card.name;
+        analysisText.innerText = entry.analysis;
+        displayContainer.classList.remove("hidden");
+      } else {
+        selectEl.value = "";
+        imgEl.src = "";
+        titleEl.innerText = "";
+        analysisText.innerText = "";
+        displayContainer.classList.add("hidden");
+      }
+    }
+
+    function editCardEntry(dateStr) {
+      const dateInput = document.getElementById("entry-date");
+      dateInput.value = dateStr;
+      loadEntryForDate();
+      dateInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function renderHistory() {
+      const container = document.getElementById("history-list");
+      container.innerHTML = "";
+
+      const sortedDates = Object.keys(journalData).sort().reverse();
+
+      if (sortedDates.length === 0) {
+        container.innerHTML = `<p class="text-xs text-gray-400 italic text-center py-4">No cards stored in device memory.</p>`;
+        return;
+      }
+
+      sortedDates.forEach(dateStr => {
+        const entry = journalData[dateStr];
+        const dateObj = new Date(dateStr + "T00:00:00");
+        const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+        const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+        const item = document.createElement("div");
+        item.className = "flex items-center justify-between p-3 rounded-xl bg-emerald-50/50 hover:bg-emerald-100/50 border border-emerald-100 transition-colors cursor-pointer";
+        item.onclick = () => editCardEntry(dateStr);
+
+        item.innerHTML = `
+          <div class="flex items-center gap-3">
+            <img src="${entry.card.img}" class="h-10 w-7 object-contain rounded">
+            <div>
+              <p class="text-xs font-bold text-emerald-950">${formattedDate} <span class="text-emerald-700 font-normal">(${dayOfWeek})</span></p>
+              <p class="text-xs text-gray-600 font-medium">${entry.card.name}</p>
+            </div>
+          </div>
+          <button class="text-xs text-emerald-700 hover:text-emerald-950 font-semibold underline">Edit</button>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    async function generateAIAstroSynergy() {
+      const container = document.getElementById("astro-synergy-result");
+      const loading = document.getElementById("astro-loading");
+      const dates = Object.keys(journalData);
+
+      if (dates.length === 0) {
+        container.innerText = "Please draw at least one card to generate an Astrological Synergy analysis.";
+        container.classList.remove("hidden");
+        return;
+      }
+
+      const recentCards = dates.slice(0, 5).map(d => `${d}: ${journalData[d].card.name}`).join(", ");
+      const apiKey = savedApiKeyVal || localStorage.getItem('gemini_api_key');
+
+      if (!apiKey) {
+        container.innerHTML = `⚠️ Click '🔑 Key Status' above and enter your Gemini API Key.`;
+        container.classList.remove("hidden");
+        return;
+      }
+
+      loading.classList.remove("hidden");
+      container.classList.add("hidden");
+
+      const prompt = `Act as a wise, warm tarot and astrology reader. Avoid esoteric jargon.
+User Natal Chart: Sun in Scorpio, Moon in Cancer, Gemini Ascendant.
+Stored Draws: ${recentCards}.
+
+Synthesize these stored card draws with their natal chart in clear, warm language using brief sections.`;
+
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
+
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+
+        const data = await res.json();
+        if (data.error) {
+          loading.classList.add("hidden");
+          container.innerText = `⚠️ API Error: ${data.error.message}`;
+          container.classList.remove("hidden");
+          return;
+        }
+
+        const resultText = data.candidates[0].content.parts[0].text;
+        loading.classList.add("hidden");
+        container.innerHTML = `<strong>Astrological & Tarot Synergy Analysis:</strong><br><br>${resultText}`;
+        container.classList.remove("hidden");
+      } catch (err) {
+        loading.classList.add("hidden");
+        container.innerText = "Network error contacting Gemini API.";
+        container.classList.remove("hidden");
+      }
+    }
+
+    function exportToPDF() {
+      const element = document.createElement('div');
+      element.className = "p-6 bg-white text-gray-900";
+      
+      let htmlContent = `<h1 style="font-size: 24px; font-weight: bold; color: #064e3b; margin-bottom: 16px;">Tarot Journal History</h1>`;
+
+      Object.keys(journalData).sort().reverse().forEach(dateStr => {
+        const entry = journalData[dateStr];
+        const dateObj = new Date(dateStr + "T00:00:00");
+        const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+
+        htmlContent += `
+          <div style="margin-bottom: 20px; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px;">
+            <h3 style="font-weight: bold; color: #047857;">${dateStr} (${dayOfWeek}) - ${entry.card.name}</h3>
+            <p style="font-style: italic; font-size: 13px; color: #374151; margin-top: 6px; white-space: pre-line;">${entry.analysis}</p>
+          </div>
+        `;
+      });
+
+      element.innerHTML = htmlContent;
+      
+      const opt = {
+        margin:       0.5,
+        filename:     'tarot_journal_history.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+
+      html2pdf().set(opt).from(element).save();
+    }
+  </script>
+</body>
+</html>
