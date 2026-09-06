@@ -566,33 +566,57 @@ Synthesize these stored card draws with their natal chart in clear, warm languag
     }
 
     function exportToPDF() {
+      // 1. Create a wrapper container for print layout
       const element = document.createElement('div');
       element.className = "p-6 bg-white text-gray-900";
       
-      let htmlContent = `<h1 style="font-size: 24px; font-weight: bold; color: #064e3b; margin-bottom: 16px;">Tarot Journal History</h1>`;
+      let htmlContent = `
+        <div style="margin-bottom: 24px; border-b: 2px solid #064e3b; padding-bottom: 12px;">
+          <h1 style="font-size: 24px; font-weight: bold; color: #064e3b; margin: 0;">Celestial Tarot - Journal History</h1>
+          <p style="font-size: 12px; color: #047857; margin-top: 4px;">Exported on ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+        </div>
+      `;
 
-      Object.keys(journalData).sort().reverse().forEach(dateStr => {
+      const sortedDates = Object.keys(journalData).sort().reverse();
+
+      if (sortedDates.length === 0) {
+        alert("No entries stored to export.");
+        return;
+      }
+
+      // 2. Build each journal entry block with explicit page-break rules
+      sortedDates.forEach(dateStr => {
         const entry = journalData[dateStr];
         const dateObj = new Date(dateStr + "T00:00:00");
         const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+        const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
         htmlContent += `
-          <div style="margin-bottom: 20px; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px;">
-            <h3 style="font-weight: bold; color: #047857;">${dateStr} (${dayOfWeek}) - ${entry.card.name}</h3>
-            <p style="font-style: italic; font-size: 13px; color: #374151; margin-top: 6px; white-space: pre-line;">${entry.analysis}</p>
+          <div class="pdf-entry" style="page-break-inside: avoid; break-inside: avoid; margin-bottom: 20px; padding: 16px; border: 1px solid #a7f3d0; border-radius: 12px; background-color: #f0fdf4;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 12px;">
+              <h3 style="font-size: 16px; font-weight: bold; color: #064e3b; margin: 0;">${formattedDate} (${dayOfWeek})</h3>
+              <span style="font-size: 14px; font-weight: bold; color: #047857;">${entry.card.name}</span>
+            </div>
+            <div style="font-size: 12px; line-height: 1.6; color: #334155; white-space: pre-line; font-family: serif;">${entry.analysis}</div>
           </div>
         `;
       });
 
       element.innerHTML = htmlContent;
       
+      // 3. Configure html2pdf with explicit page-break modes
       const opt = {
-        margin:       0.5,
-        filename:     'tarot_journal_history.pdf',
+        margin:       0.4,
+        filename:     `tarot_journal_${new Date().toISOString().split('T')[0]}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2 },
-        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+        html2canvas:  { scale: 2, useCORS: true, logging: false },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' },
+        pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
       };
+
+      // 4. Generate and download PDF
+      html2pdf().set(opt).from(element).save();
+    };
 
       html2pdf().set(opt).from(element).save();
     }
