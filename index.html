@@ -16,10 +16,13 @@
   <style>
     body {
       background-color: #f6f4fb;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
       -webkit-tap-highlight-color: transparent;
       padding-top: env(safe-area-inset-top);
       padding-bottom: env(safe-area-inset-bottom);
+      letter-spacing: -0.01em;
     }
     .card-shadow {
       box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
@@ -32,6 +35,62 @@
        look the same as before via their existing text-sm/text-xs classes). */
     input, select {
       font-size: 16px !important;
+    }
+    h1, h2, h3 { letter-spacing: -0.015em; }
+
+    /* Consistent, visible keyboard focus without a distracting mouse-click ring */
+    button:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 2px solid var(--accent-violet, #a78bfa);
+      outline-offset: 2px;
+    }
+
+    /* Touch feedback: :hover doesn't fire reliably on iOS, :active does */
+    .app-btn-primary, .app-btn-ghost {
+      cursor: pointer;
+      user-select: none;
+    }
+    .app-btn-primary:active, .app-btn-ghost:active {
+      transform: scale(0.97);
+    }
+    .app-btn-primary:hover {
+      filter: brightness(1.1);
+      box-shadow: 0 8px 20px -6px rgba(124, 58, 237, 0.55);
+    }
+    .app-btn-ghost:hover {
+      background: rgba(255,255,255,0.09);
+    }
+    .app-btn-primary, .app-btn-ghost {
+      transition: transform .12s ease, background-color .15s ease, filter .15s ease, box-shadow .15s ease;
+    }
+    .history-row:hover {
+      background: rgba(255,255,255,0.03);
+    }
+
+    /* Inline icon sizing so svg icons sit flush with text baselines */
+    .icon {
+      width: 1em;
+      height: 1em;
+      flex-shrink: 0;
+      vertical-align: -0.125em;
+    }
+    .btn-icon { width: 15px; height: 15px; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 9999px;
+      animation: spin 0.7s linear infinite;
+      vertical-align: -2px;
+    }
+
+    /* A little extra breathing room and a comfortably wider column on
+       tablets / larger screens, while staying phone-first by default. */
+    @media (min-width: 480px) {
+      main { max-width: 32rem !important; }
     }
 
 /* ---- Minimal hand-authored utility CSS (replaces Tailwind CDN JIT) ---- */
@@ -222,14 +281,18 @@ body {
   color: var(--accent-violet-bright);
   border: 1px solid var(--border-soft);
 }
-.app-btn-ghost:hover { background: rgba(255,255,255,0.09); }
+
+.app-badge {
+  background: rgba(255,255,255,0.05);
+  color: var(--accent-violet-bright);
+  border: 1px solid var(--border-soft);
+}
 
 .app-btn-primary {
   background: linear-gradient(135deg, #7c3aed, #5b21b6);
   color: #fff;
   border: none;
 }
-.app-btn-primary:hover { filter: brightness(1.1); }
 
 /* History: a quiet ledger of hairline-divided rows instead of repeated boxed pills */
 .history-row {
@@ -262,7 +325,8 @@ body {
         </div>
       </div>
       <button onclick="toggleKeyModal()" class="px-3 py-1.5 app-btn-ghost text-xs font-semibold rounded-full transition-all flex items-center gap-1">
-        🔑 Key
+        <svg class="icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="16" r="3.5"/><path d="M10.5 13.5L20 4"/><path d="M16.5 7.5l3 3"/><path d="M14 10l2 2"/></svg>
+        Key
       </button>
     </div>
   </header>
@@ -293,10 +357,10 @@ body {
         <div id="ai-analysis-container" class="pt-2">
           <div class="flex items-center justify-between mb-2">
             <span class="text-sm font-semibold app-body-text">Daily reading</span>
-            <span id="ai-status-badge" class="text-[10px] app-btn-ghost px-2 py-0.5 rounded-full font-bold">Saved Reading</span>
+            <span id="ai-status-badge" class="text-[10px] app-badge px-2 py-0.5 rounded-full font-bold">Saved Reading</span>
           </div>
           <div id="ai-loading" class="hidden py-6 text-center text-xs app-subtle italic">
-            🔮 Generating reading via Gemini 3.5 Flash-Lite...
+            <span class="spinner"></span> Generating reading via Gemini 3.5 Flash-Lite...
           </div>
           <div id="ai-analysis-text" class="text-sm leading-relaxed app-body-text font-serif app-panel p-4 rounded-xl whitespace-pre-line space-y-2"></div>
         </div>
@@ -306,14 +370,16 @@ body {
     </section>
 
     <section class="app-surface rounded-3xl p-6 space-y-4">
-      <div class="flex justify-between items-center">
+      <div class="space-y-3">
         <h2 class="text-lg font-serif font-bold app-heading">Stored card history</h2>
         <div class="flex gap-2">
-          <button id="export-text-btn" onclick="exportAsText()" class="text-xs px-3 py-1.5 app-btn-ghost rounded-lg transition-colors font-medium flex items-center gap-1">
-            📋 Copy/Share Text
+          <button id="export-text-btn" onclick="exportAsText()" title="Copy or share as text" class="text-xs px-3 py-1.5 app-btn-ghost rounded-lg transition-colors font-medium flex items-center gap-1.5">
+            <svg class="icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M8 8l4-4 4 4"/><path d="M4 14v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5"/></svg>
+            Share
           </button>
-          <button id="export-pdf-btn" onclick="exportToPDF()" class="text-xs px-3 py-1.5 app-btn-ghost rounded-lg transition-colors font-medium flex items-center gap-1">
-            📥 Export PDF
+          <button id="export-pdf-btn" onclick="exportToPDF()" title="Export as PDF" class="text-xs px-3 py-1.5 app-btn-ghost rounded-lg transition-colors font-medium flex items-center gap-1.5">
+            <svg class="icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>
+            PDF
           </button>
         </div>
       </div>
@@ -345,11 +411,12 @@ body {
       </div>
 
       <button onclick="generateAIAstroSynergy()" class="w-full py-3 app-btn-primary font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
-        <span>✨</span> Analyze card trends vs. natal chart
+        <svg class="icon btn-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8L12 2z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15z"/></svg>
+        Analyze card trends vs. natal chart
       </button>
 
       <div id="astro-loading" class="hidden text-center text-xs text-purple-200 italic py-2">
-        🪐 Gemini 3.5 Flash is mapping your stored history...
+        <span class="spinner"></span> Gemini 3.5 Flash is mapping your stored history...
       </div>
 
       <div id="astro-synergy-result" class="hidden text-xs leading-relaxed text-purple-100/90 font-serif italic bg-white/10 p-4 rounded-xl border border-white/10 mt-3 whitespace-pre-line">
@@ -979,7 +1046,7 @@ Synthesize these stored card draws with their natal chart in clear, warm languag
       const originalLabel = exportBtn ? exportBtn.innerHTML : null;
 
       try {
-        if (exportBtn) exportBtn.innerHTML = "⏳ Preparing...";
+        if (exportBtn) exportBtn.innerHTML = "<span class=\"spinner\"></span> Preparing...";
         await ensureHtml2Pdf();
       } catch (err) {
         console.error(err);
@@ -1069,7 +1136,7 @@ Synthesize these stored card draws with their natal chart in clear, warm languag
         }
       } catch (err) {
         console.error('PDF export failed:', err);
-        alert("PDF export failed. You can also try the '📋 Copy/Share Text' button as an alternative.");
+        alert("PDF export failed. You can also try the 'Share' button as an alternative.");
       } finally {
         document.body.removeChild(wrapper);
         if (exportBtn) exportBtn.innerHTML = originalLabel;
