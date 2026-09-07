@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tarot Journal">
-  <meta name="theme-color" content="#581c87">
+  <meta name="theme-color" content="#150f30">
   <link rel="apple-touch-icon" href="icon-180.png">
   <link rel="icon" href="icon-180.png">
   <!-- Warm up the connection to the Gemini API host so the first daily-reading call starts faster -->
@@ -156,76 +156,171 @@
 .focus\:ring-2:focus{box-shadow:0 0 0 2px #c084fc}
 .focus\:ring-purple-400:focus{box-shadow:0 0 0 2px #c084fc}
 
+/* ---- Celestial theme: deep twilight surfaces instead of flat white cards ---- */
+:root {
+  color-scheme: dark;
+  --bg-top: #1b1638;
+  --bg-bottom: #0b0918;
+  --border-soft: rgba(196,181,253,0.16);
+  --border-softer: rgba(196,181,253,0.09);
+  --text-heading: #f4eefc;
+  --text-body: #c9bfe0;
+  --text-muted: #8d81ab;
+  --accent-violet: #a78bfa;
+  --accent-violet-bright: #c4b5fd;
+  --accent-gold: #f0c869;
+}
+
+body {
+  background-color: var(--bg-bottom);
+  background-image:
+    radial-gradient(640px 360px at 25% -6%, rgba(167,139,250,.20), transparent 60%),
+    radial-gradient(420px 260px at 95% 4%, rgba(240,200,105,.09), transparent 55%),
+    linear-gradient(180deg, var(--bg-top), var(--bg-bottom) 70%);
+  background-attachment: fixed;
+  color: var(--text-body);
+}
+
+.app-header {
+  background: rgba(13,10,28,0.78);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.app-surface {
+  background: #1f1a3d;
+  border: 1px solid var(--border-soft);
+  box-shadow: 0 24px 48px -28px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.03);
+}
+
+.app-hero {
+  background: linear-gradient(155deg, #4c1d95 0%, #1e1b4b 100%);
+  border: 1px solid rgba(167,139,250,.32);
+  box-shadow: 0 28px 60px -30px rgba(76,29,149,.65);
+}
+
+.app-panel {
+  background: rgba(255,255,255,0.035);
+  border: 1px solid var(--border-softer);
+}
+
+.app-heading { color: var(--text-heading); }
+.app-body-text { color: var(--text-body); }
+.app-subtle { color: var(--text-muted); }
+
+.app-field {
+  background: rgba(255,255,255,0.045);
+  border: 1px solid var(--border-soft);
+  color: var(--text-heading);
+}
+.app-field::-webkit-datetime-edit { color: var(--text-heading); }
+.app-field:focus { outline: none; box-shadow: 0 0 0 2px var(--accent-violet); border-color: var(--accent-violet); }
+
+.app-divider { border-color: var(--border-soft); }
+
+.app-btn-ghost {
+  background: rgba(255,255,255,0.05);
+  color: var(--accent-violet-bright);
+  border: 1px solid var(--border-soft);
+}
+.app-btn-ghost:hover { background: rgba(255,255,255,0.09); }
+
+.app-btn-primary {
+  background: linear-gradient(135deg, #7c3aed, #5b21b6);
+  color: #fff;
+  border: none;
+}
+.app-btn-primary:hover { filter: brightness(1.1); }
+
+/* History: a quiet ledger of hairline-divided rows instead of repeated boxed pills */
+.history-row {
+  display: flex; align-items: center; justify-content: space-between; gap: .75rem;
+  padding: .7rem .1rem;
+  border-bottom: 1px solid var(--border-softer);
+  cursor: pointer;
+  transition: background-color .12s ease;
+}
+.history-row:last-child { border-bottom: none; }
+.history-row:active { background: rgba(255,255,255,0.03); }
+.history-thumb {
+  width: 2.5rem; height: 3.4rem; object-fit: contain; border-radius: .5rem;
+  background: rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+
+
   </style>
 </head>
-<body class="text-gray-800 pb-12 min-h-screen">
+<body class="pb-12 min-h-screen">
 
-  <header class="pt-12 pb-4 px-6 bg-white/60 backdrop-blur-md sticky top-0 z-10 border-b border-purple-100/50">
-    <div class="max-w-md mx-auto flex justify-between items-center">
-      <div>
-        <h1 class="text-2xl font-serif font-bold text-purple-950">Celestial Tarot</h1>
-        <p class="text-xs text-purple-700/70 font-medium">Powered by Gemini 3.5 Flash</p>
+  <header class="pt-12 pb-4 px-6 app-header backdrop-blur-md sticky top-0 z-10">
+    <div class="max-w-md mx-auto flex justify-between items-center gap-3">
+      <div class="flex items-center gap-3">
+        <svg id="moon-glyph" width="32" height="32" viewBox="0 0 32 32" style="flex-shrink:0;"></svg>
+        <div>
+          <h1 class="text-2xl font-serif font-bold app-heading">Celestial Tarot</h1>
+          <p id="moon-phase-label" class="text-xs app-subtle font-medium">&nbsp;</p>
+        </div>
       </div>
-      <button onclick="toggleKeyModal()" class="px-3 py-1 bg-purple-100 text-purple-800 text-xs font-semibold rounded-full hover:bg-purple-200 transition-all flex items-center gap-1">
-        🔑 Key Status
+      <button onclick="toggleKeyModal()" class="px-3 py-1.5 app-btn-ghost text-xs font-semibold rounded-full transition-all flex items-center gap-1">
+        🔑 Key
       </button>
     </div>
   </header>
 
   <main class="max-w-md mx-auto px-4 pt-6 space-y-6">
 
-    <section class="bg-white rounded-3xl p-6 card-shadow border border-purple-50">
+    <section class="app-surface rounded-3xl p-6">
       
       <div class="flex justify-between items-center mb-5">
-        <label for="entry-date" class="text-xs font-semibold uppercase tracking-wider text-purple-800">Select Date</label>
-        <input type="date" id="entry-date" class="bg-purple-50/60 border border-purple-200 rounded-lg px-3 py-1.5 text-sm text-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-400">
+        <label for="entry-date" class="text-sm font-semibold app-body-text">Select date</label>
+        <input type="date" id="entry-date" class="app-field rounded-lg px-3 py-1.5 text-sm">
       </div>
 
       <div class="mb-5">
-        <label for="card-select" class="block text-xs font-semibold uppercase tracking-wider text-purple-800 mb-2">Daily Card Draw (78 Cards)</label>
-        <select id="card-select" class="w-full bg-purple-50/60 border border-purple-200 rounded-xl px-3 py-2.5 text-sm text-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-400">
+        <label for="card-select" class="block text-sm font-semibold app-body-text mb-2">Daily card draw (78 cards)</label>
+        <select id="card-select" class="w-full app-field rounded-xl px-3 py-2.5 text-sm">
           <option value="">-- Select a Rider-Waite Card --</option>
         </select>
       </div>
 
-      <div id="reading-display-container" class="hidden border-t border-purple-100 pt-5 space-y-4">
+      <div id="reading-display-container" class="hidden border-t app-divider pt-5 space-y-4">
         
-        <div class="flex flex-col items-center justify-center p-4 bg-purple-50/30 rounded-2xl border border-purple-100/80">
+        <div class="flex flex-col items-center justify-center p-4 app-panel rounded-2xl">
           <img id="card-image" src="" alt="Tarot Card Illustration" class="h-56 rounded-lg shadow-md object-contain mb-2">
-          <h3 id="card-title" class="text-sm font-serif font-bold text-purple-950"></h3>
+          <h3 id="card-title" class="text-sm font-serif font-bold app-heading"></h3>
         </div>
 
         <div id="ai-analysis-container" class="pt-2">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-semibold uppercase tracking-wider text-purple-800">Daily Reading</span>
-            <span id="ai-status-badge" class="text-[10px] bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full font-bold">Saved Reading</span>
+            <span class="text-sm font-semibold app-body-text">Daily reading</span>
+            <span id="ai-status-badge" class="text-[10px] app-btn-ghost px-2 py-0.5 rounded-full font-bold">Saved Reading</span>
           </div>
-          <div id="ai-loading" class="hidden py-6 text-center text-xs text-purple-700 italic">
-            🔮 Generating reading via Gemini 2.5 Flash-Lite...
+          <div id="ai-loading" class="hidden py-6 text-center text-xs app-subtle italic">
+            🔮 Generating reading via Gemini 3.5 Flash-Lite...
           </div>
-          <div id="ai-analysis-text" class="text-sm leading-relaxed text-gray-700 font-serif bg-purple-50/40 p-4 rounded-xl border border-purple-100/60 whitespace-pre-line space-y-2"></div>
+          <div id="ai-analysis-text" class="text-sm leading-relaxed app-body-text font-serif app-panel p-4 rounded-xl whitespace-pre-line space-y-2"></div>
         </div>
 
       </div>
 
     </section>
 
-    <section class="bg-white rounded-3xl p-6 card-shadow border border-purple-50 space-y-4">
+    <section class="app-surface rounded-3xl p-6 space-y-4">
       <div class="flex justify-between items-center">
-        <h2 class="text-lg font-serif font-bold text-purple-950">Stored Card History</h2>
-        <button id="export-pdf-btn" onclick="exportToPDF()" class="text-xs px-3 py-1.5 bg-purple-100 text-purple-800 rounded-lg hover:bg-purple-200 transition-colors font-medium flex items-center gap-1">
+        <h2 class="text-lg font-serif font-bold app-heading">Stored card history</h2>
+        <button id="export-pdf-btn" onclick="exportToPDF()" class="text-xs px-3 py-1.5 app-btn-ghost rounded-lg transition-colors font-medium flex items-center gap-1">
           📥 Export PDF
         </button>
       </div>
 
-      <div id="history-list" class="space-y-3 max-h-60 overflow-y-auto pr-1">
+      <div id="history-list" class="max-h-60 overflow-y-auto pr-1">
         </div>
     </section>
 
-    <section class="bg-gradient-to-br from-purple-900 to-indigo-950 rounded-3xl p-6 text-white shadow-xl space-y-4">
+    <section class="app-hero rounded-3xl p-6 text-white space-y-4">
       <div class="flex items-center justify-between">
-        <h2 class="text-lg font-serif font-bold text-purple-200">Astrological Synergy</h2>
-        <span class="text-xs text-purple-300/80 bg-white/10 px-2 py-1 rounded-md">Chart Linked</span>
+        <h2 class="text-lg font-serif font-bold text-purple-200">Astrological synergy</h2>
+        <span class="text-xs text-purple-300/80 bg-white/10 px-2 py-1 rounded-md">Chart linked</span>
       </div>
 
       <div class="flex flex-col items-center justify-center p-4 bg-purple-950/50 rounded-2xl border border-purple-500/30">
@@ -244,8 +339,8 @@
         <p class="text-[11px] text-center text-purple-300 font-medium mt-2">Sun: Scorpio | Moon: Cancer | ASC: Gemini</p>
       </div>
 
-      <button onclick="generateAIAstroSynergy()" class="w-full py-3 bg-purple-500 hover:bg-purple-400 text-purple-950 font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
-        <span>✨</span> Analyze Card Trends vs. Natal Chart
+      <button onclick="generateAIAstroSynergy()" class="w-full py-3 app-btn-primary font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
+        <span>✨</span> Analyze card trends vs. natal chart
       </button>
 
       <div id="astro-loading" class="hidden text-center text-xs text-purple-200 italic py-2">
@@ -259,15 +354,15 @@
   </main>
 
   <div id="key-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-    <div class="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl space-y-4">
-      <h3 class="text-base font-serif font-bold text-purple-950">Gemini API Key Setup</h3>
-      <p class="text-xs text-gray-600 leading-relaxed">
-        Paste your Google AI Studio API key below. It will be permanently stored in phone database memory.
+    <div class="app-surface rounded-3xl w-full max-w-sm p-6 shadow-2xl space-y-4">
+      <h3 class="text-base font-serif font-bold app-heading">Gemini API key setup</h3>
+      <p class="text-xs app-subtle leading-relaxed">
+        Paste your Google AI Studio API key below. It's stored only on this device.
       </p>
-      <input type="password" id="gemini-key-input" placeholder="AIzaSy..." class="w-full bg-purple-50/60 border border-purple-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-purple-400">
+      <input type="password" id="gemini-key-input" placeholder="AIzaSy..." class="w-full app-field rounded-xl px-3 py-2 text-xs">
       <div class="flex gap-2">
-        <button onclick="saveApiKey()" class="flex-1 py-2 bg-purple-800 text-white text-xs font-bold rounded-xl">Save Key</button>
-        <button onclick="toggleKeyModal()" class="px-4 py-2 bg-gray-100 text-gray-600 text-xs font-bold rounded-xl">Cancel</button>
+        <button onclick="saveApiKey()" class="flex-1 py-2 app-btn-primary text-xs font-bold rounded-xl">Save key</button>
+        <button onclick="toggleKeyModal()" class="px-4 py-2 app-btn-ghost text-xs font-bold rounded-xl">Cancel</button>
       </div>
     </div>
   </div>
@@ -514,6 +609,43 @@
       toastTimeout = setTimeout(() => { toast.style.opacity = "0"; }, 2800);
     }
 
+    // A real, computed moon phase for today — grounds the header in the app's
+    // actual subject matter instead of a generic decorative icon.
+    function getMoonPhase(date) {
+      const knownNewMoon = Date.UTC(2000, 0, 6, 18, 14);
+      const synodicMonth = 29.53058867;
+      const diffDays = (date.getTime() - knownNewMoon) / 86400000;
+      const phase = ((diffDays % synodicMonth) + synodicMonth) % synodicMonth / synodicMonth;
+      return phase; // 0 = new moon, 0.5 = full moon
+    }
+
+    function moonPhaseName(phase) {
+      if (phase < 0.03 || phase > 0.97) return "New Moon";
+      if (phase < 0.22) return "Waxing Crescent";
+      if (phase < 0.28) return "First Quarter";
+      if (phase < 0.47) return "Waxing Gibbous";
+      if (phase < 0.53) return "Full Moon";
+      if (phase < 0.72) return "Waning Gibbous";
+      if (phase < 0.78) return "Last Quarter";
+      return "Waning Crescent";
+    }
+
+    function renderMoonGlyph(phase) {
+      const svg = document.getElementById("moon-glyph");
+      const r = 13, cx = 16, cy = 16;
+      // Fraction of the disc illuminated (0 = new moon, 1 = full moon), then
+      // slide a background-colored circle across the lit disc so the visible
+      // sliver matches that fraction.
+      const illuminated = (1 - Math.cos(phase * 2 * Math.PI)) / 2;
+      const shift = illuminated * r * 2.3;
+      svg.innerHTML = `
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="#f0c869"/>
+        <circle cx="${cx + shift}" cy="${cy}" r="${r}" fill="#1b1638"/>
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(196,181,253,0.45)" stroke-width="1"/>
+      `;
+      document.getElementById("moon-phase-label").textContent = moonPhaseName(phase) + " tonight";
+    }
+
     // --- MAIN APP LOGIC ---
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
@@ -529,6 +661,7 @@
       dateInput.value = today;
 
       populateDropdown();
+      renderMoonGlyph(getMoonPhase(new Date()));
 
       // Retrieve permanently stored history and key. If IndexedDB can't be
       // opened (private browsing, storage pressure, etc.) fall back to
@@ -663,7 +796,7 @@
 **A Short Affirmation:** A one-sentence positive thought to keep in mind.`;
 
       const userPrompt = `Analyse today's tarot card draw: "${cardName}".`;
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
 
       try {
         const res = await fetch(url, {
@@ -730,7 +863,7 @@
       const sortedDates = Object.keys(journalData).sort().reverse();
 
       if (sortedDates.length === 0) {
-        container.innerHTML = `<p class="text-xs text-gray-400 italic text-center py-4">No cards stored in device memory.</p>`;
+        container.innerHTML = `<p class="text-xs app-subtle italic text-center py-4">No cards stored in device memory.</p>`;
         return;
       }
 
@@ -741,18 +874,18 @@
         const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
         const item = document.createElement("div");
-        item.className = "flex items-center justify-between p-3 rounded-xl bg-purple-50/50 hover:bg-purple-100/50 border border-purple-100 transition-colors cursor-pointer";
+        item.className = "history-row";
         item.onclick = () => editCardEntry(dateStr);
 
         item.innerHTML = `
           <div class="flex items-center gap-3">
-            <img src="${entry.card.img}" class="h-10 w-7 object-contain rounded">
+            <img src="${entry.card.img}" class="history-thumb">
             <div>
-              <p class="text-xs font-bold text-purple-950">${formattedDate} <span class="text-purple-700 font-normal">(${dayOfWeek})</span></p>
-              <p class="text-xs text-gray-600 font-medium">${entry.card.name}</p>
+              <p class="text-xs font-bold app-heading">${formattedDate} <span class="app-subtle font-normal">(${dayOfWeek})</span></p>
+              <p class="text-xs app-subtle font-medium">${entry.card.name}</p>
             </div>
           </div>
-          <button class="text-xs text-purple-700 hover:text-purple-950 font-semibold underline">Edit</button>
+          <button class="text-xs font-semibold" style="color:var(--accent-violet-bright); background:transparent; border:none; padding:0;">Edit</button>
         `;
         container.appendChild(item);
       });
