@@ -308,9 +308,14 @@ body {
     <section class="app-surface rounded-3xl p-6 space-y-4">
       <div class="flex justify-between items-center">
         <h2 class="text-lg font-serif font-bold app-heading">Stored card history</h2>
-        <button id="export-pdf-btn" onclick="exportToPDF()" class="text-xs px-3 py-1.5 app-btn-ghost rounded-lg transition-colors font-medium flex items-center gap-1">
-          📥 Export PDF
-        </button>
+        <div class="flex gap-2">
+          <button id="export-text-btn" onclick="exportAsText()" class="text-xs px-3 py-1.5 app-btn-ghost rounded-lg transition-colors font-medium flex items-center gap-1">
+            📋 Copy/Share Text
+          </button>
+          <button id="export-pdf-btn" onclick="exportToPDF()" class="text-xs px-3 py-1.5 app-btn-ghost rounded-lg transition-colors font-medium flex items-center gap-1">
+            📥 Export PDF
+          </button>
+        </div>
       </div>
 
       <div id="history-list" class="max-h-60 overflow-y-auto pr-1">
@@ -1030,13 +1035,96 @@ Synthesize these stored card draws with their natal chart in clear, warm languag
       };
 
       try {
-        await html2pdf().set(opt).from(element).save();
+        // iOS Safari, when a site is installed to the Home Screen (standalone
+        // mode), blocks the classic <a download> / blob-URL trick that
+        // jsPDF's own .save() uses internally — this is a long-standing
+        // WebKit restriction, not something fixable from inside the PDF
+        // library. Getting the PDF as a Blob and handing it to the native
+        // Share Sheet (Web Share API with files) is Apple's supported path
+        // for an installed web app to let the user save/send a generated
+        // file, so that's tried first; the old direct-download link is kept
+        // as a fallback for browsers where file sharing isn't available
+        // (e.g. desktop).
+        const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
+        const pdfFile = new File([pdfBlob], 'tarot_journal_history.pdf', { type: 'application/pdf' });
+
+        if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+          try {
+            await navigator.share({ files: [pdfFile], title: 'Tarot Journal History' });
+          } catch (shareErr) {
+            if (shareErr && shareErr.name !== 'AbortError') {
+              throw shareErr;
+            }
+            // AbortError just means the user closed the share sheet — not a failure.
+          }
+        } else {
+          const url = URL.createObjectURL(pdfBlob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'tarot_journal_history.pdf';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 2000);
+        }
       } catch (err) {
         console.error('PDF export failed:', err);
-        alert("PDF export failed. Please try again.");
+        alert("PDF export failed. You can also try the '📋 Copy/Share Text' button as an alternative.");
       } finally {
         document.body.removeChild(wrapper);
         if (exportBtn) exportBtn.innerHTML = originalLabel;
+      }
+    }
+
+    // Builds the same history content as plain text, for sharing/copying.
+    // This has no dependency on any PDF/canvas library and no file-download
+    // step at all, so it works everywhere — including iOS home-screen apps —
+    // regardless of the platform quirks that can affect file export.
+    function buildHistoryText() {
+      const sortedDates = Object.keys(journalData).sort().reverse();
+      if (sortedDates.length === 0) return "No cards stored yet.";
+
+      let text = "Tarot Journal History\n\n";
+      sortedDates.forEach(dateStr => {
+        const entry = journalData[dateStr];
+        const dateObj = new Date(dateStr + "T00:00:00");
+        const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+        text += `${dateStr} (${dayOfWeek}) - ${entry.card.name}\n${entry.analysis}\n\n`;
+      });
+      return text.trim();
+    }
+
+    async function exportAsText() {
+      const btn = document.getElementById('export-text-btn');
+      const originalLabel = btn ? btn.innerHTML : null;
+      const text = buildHistoryText();
+
+      try {
+        if (navigator.share) {
+          try {
+            await navigator.share({ title: 'Tarot Journal History', text });
+            return;
+          } catch (shareErr) {
+            if (shareErr && shareErr.name !== 'AbortError') {
+              throw shareErr;
+            }
+            return; // user cancelled the share sheet
+          }
+        }
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+          if (btn) btn.innerHTML = "✅ Copied!";
+          setTimeout(() => { if (btn) btn.innerHTML = originalLabel; }, 1800);
+          return;
+        }
+
+        // Last-resort fallback with no platform dependencies at all: a
+        // selectable text prompt the user can manually copy.
+        window.prompt("Copy your journal history below:", text);
+      } catch (err) {
+        console.error('Text export failed:', err);
+        alert("Couldn't share or copy the text. Please try again.");
       }
     }
   </script>
