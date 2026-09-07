@@ -24,11 +24,8 @@
       padding-bottom: env(safe-area-inset-bottom);
       letter-spacing: -0.01em;
     }
-    .card-shadow {
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
-    }
     header {
-      padding-top: calc(3rem + env(safe-area-inset-top));
+      padding-top: calc(2.75rem + env(safe-area-inset-top));
     }
     /* iOS Safari auto-zooms the page on focus of any input/select under 16px.
        Force 16px on the actual controls (visual size is unaffected, they still
@@ -38,32 +35,11 @@
     }
     h1, h2, h3 { letter-spacing: -0.015em; }
 
-    /* Consistent, visible keyboard focus without a distracting mouse-click ring */
+    /* Plain, non-decorative keyboard focus indicator (accessibility baseline,
+       not a designed micro-interaction). */
     button:focus-visible, input:focus-visible, select:focus-visible {
-      outline: 2px solid var(--accent-violet, #a78bfa);
+      outline: 1px solid var(--text-muted, #8d81ab);
       outline-offset: 2px;
-    }
-
-    /* Touch feedback: :hover doesn't fire reliably on iOS, :active does */
-    .app-btn-primary, .app-btn-ghost {
-      cursor: pointer;
-      user-select: none;
-    }
-    .app-btn-primary:active, .app-btn-ghost:active {
-      transform: scale(0.97);
-    }
-    .app-btn-primary:hover {
-      filter: brightness(1.1);
-      box-shadow: 0 8px 20px -6px rgba(124, 58, 237, 0.55);
-    }
-    .app-btn-ghost:hover {
-      background: rgba(255,255,255,0.09);
-    }
-    .app-btn-primary, .app-btn-ghost {
-      transition: transform .12s ease, background-color .15s ease, filter .15s ease, box-shadow .15s ease;
-    }
-    .history-row:hover {
-      background: rgba(255,255,255,0.03);
     }
 
     /* Inline icon sizing so svg icons sit flush with text baselines */
@@ -73,24 +49,12 @@
       flex-shrink: 0;
       vertical-align: -0.125em;
     }
-    .btn-icon { width: 15px; height: 15px; }
+    .btn-icon { width: 14px; height: 14px; }
 
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .spinner {
-      display: inline-block;
-      width: 14px;
-      height: 14px;
-      border: 2px solid currentColor;
-      border-right-color: transparent;
-      border-radius: 9999px;
-      animation: spin 0.7s linear infinite;
-      vertical-align: -2px;
-    }
-
-    /* A little extra breathing room and a comfortably wider column on
-       tablets / larger screens, while staying phone-first by default. */
+    /* Comfortably wider column on tablets/larger screens; the dual-column
+       history/astrology grid activates at the same breakpoint. */
     @media (min-width: 480px) {
-      main { max-width: 32rem !important; }
+      main { max-width: 34rem !important; }
     }
 
 /* ---- Minimal hand-authored utility CSS (replaces Tailwind CDN JIT) ---- */
@@ -101,83 +65,39 @@
 .hidden{display:none}.fixed{position:fixed}.sticky{position:sticky}
 .inset-0{top:0;right:0;bottom:0;left:0}.top-0{top:0}.z-10{z-index:10}.z-50{z-index:50}
 .min-h-screen{min-height:100vh}.overflow-y-auto{overflow-y:auto}
-.cursor-pointer{cursor:pointer}.object-contain{object-fit:contain}
+.object-contain{object-fit:contain}
 
 /* Flex helpers */
-.items-center{align-items:center}.justify-between{justify-content:space-between}
+.items-center{align-items:center}.items-start{align-items:flex-start}
+.justify-between{justify-content:space-between}
 .justify-center{justify-content:center}
-.gap-1{gap:.25rem}.gap-2{gap:.5rem}.gap-3{gap:.75rem}
+.gap-1{gap:.25rem}.gap-1\.5{gap:.375rem}.gap-2{gap:.5rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}
 
 /* Spacing */
-.mb-2{margin-bottom:.5rem}.mb-5{margin-bottom:1.25rem}
-.mt-2{margin-top:.5rem}.mt-3{margin-top:.75rem}
+.mb-1{margin-bottom:.25rem}.mb-2{margin-bottom:.5rem}.mb-4{margin-bottom:1rem}.mb-5{margin-bottom:1.25rem}
+.mt-2{margin-top:.5rem}.mt-3{margin-top:.75rem}.mt-4{margin-top:1rem}.mt-5{margin-top:1.25rem}.mt-6{margin-top:1.5rem}
 .mx-auto{margin-left:auto;margin-right:auto}
 .p-3{padding:.75rem}.p-4{padding:1rem}.p-6{padding:1.5rem}
-.pb-12{padding-bottom:3rem}.pb-4{padding-bottom:1rem}.pr-1{padding-right:.25rem}
-.pt-12{padding-top:3rem}.pt-2{padding-top:.5rem}.pt-5{padding-top:1.25rem}.pt-6{padding-top:1.5rem}
-.px-2{padding-left:.5rem;padding-right:.5rem}.px-3{padding-left:.75rem;padding-right:.75rem}
-.px-4{padding-left:1rem;padding-right:1rem}.px-6{padding-left:1.5rem;padding-right:1.5rem}
+.pb-6{padding-bottom:1.5rem}.pb-4{padding-bottom:1rem}.pb-12{padding-bottom:3rem}.pr-1{padding-right:.25rem}
+.pt-2{padding-top:.5rem}.pt-5{padding-top:1.25rem}.pt-6{padding-top:1.5rem}
+.px-2{padding-left:.5rem;padding-right:.5rem}.px-2\.5{padding-left:.625rem;padding-right:.625rem}.px-3{padding-left:.75rem;padding-right:.75rem}
+.px-4{padding-left:1rem;padding-right:1rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}
 .py-0\.5{padding-top:.125rem;padding-bottom:.125rem}.py-1{padding-top:.25rem;padding-bottom:.25rem}
 .py-1\.5{padding-top:.375rem;padding-bottom:.375rem}.py-2{padding-top:.5rem;padding-bottom:.5rem}
 .py-2\.5{padding-top:.625rem;padding-bottom:.625rem}.py-3{padding-top:.75rem;padding-bottom:.75rem}
-.py-4{padding-top:1rem;padding-bottom:1rem}.py-6{padding-top:1.5rem;padding-bottom:1.5rem}
-.space-y-2>*+*{margin-top:.5rem}.space-y-3>*+*{margin-top:.75rem}
-.space-y-4>*+*{margin-top:1rem}.space-y-6>*+*{margin-top:1.5rem}
+.py-6{padding-top:1.5rem;padding-bottom:1.5rem}
+.space-y-2>*+*{margin-top:.5rem}.space-y-4>*+*{margin-top:1rem}
 
 /* Sizing */
-.h-10{height:2.5rem}.h-40{height:10rem}.h-56{height:14rem}
+.h-56{height:14rem}
 .max-h-60{max-height:15rem}.max-w-md{max-width:28rem}.max-w-sm{max-width:24rem}
-.w-40{width:10rem}.w-7{width:1.75rem}.w-full{width:100%}
+.w-full{width:100%}
 
 /* Borders / radius */
-.border{border-width:1px;border-style:solid;border-color:#e5e7eb}
-.border-b{border-bottom-width:1px;border-style:solid;border-color:#e5e7eb}
-.border-t{border-top-width:1px;border-style:solid;border-color:#e5e7eb}
-.rounded{border-radius:.25rem}.rounded-2xl{border-radius:1rem}.rounded-3xl{border-radius:1.5rem}
-.rounded-full{border-radius:9999px}.rounded-lg{border-radius:.5rem}
-.rounded-md{border-radius:.375rem}.rounded-xl{border-radius:.75rem}
-
-/* Border colors */
-.border-purple-50{border-color:#faf5ff}
-.border-purple-100{border-color:#f3e8ff}
-.border-purple-100\/50{border-color:rgba(243,232,255,.5)}
-.border-purple-100\/60{border-color:rgba(243,232,255,.6)}
-.border-purple-100\/80{border-color:rgba(243,232,255,.8)}
-.border-purple-200{border-color:#e9d5ff}
-.border-purple-500\/30{border-color:rgba(168,85,247,.3)}
-.border-white\/10{border-color:rgba(255,255,255,.1)}
+.rounded{border-radius:.25rem}.rounded-md{border-radius:.375rem}.rounded-lg{border-radius:.5rem}
 
 /* Backgrounds */
 .bg-black\/50{background-color:rgba(0,0,0,.5)}
-.bg-gradient-to-br{background-image:linear-gradient(to bottom right,var(--tw-from),var(--tw-to))}
-.from-purple-900{--tw-from:#581c87}
-.to-indigo-950{--tw-to:#1e1b4b}
-.bg-gray-100{background-color:#f3f4f6}
-.bg-purple-100{background-color:#f3e8ff}
-.bg-purple-50\/30{background-color:rgba(250,245,255,.3)}
-.bg-purple-50\/40{background-color:rgba(250,245,255,.4)}
-.bg-purple-50\/50{background-color:rgba(250,245,255,.5)}
-.bg-purple-50\/60{background-color:rgba(250,245,255,.6)}
-.bg-purple-500{background-color:#a855f7}
-.bg-purple-800{background-color:#6b21a8}
-.bg-purple-950\/50{background-color:rgba(59,7,100,.5)}
-.bg-white{background-color:#fff}
-.bg-white\/10{background-color:rgba(255,255,255,.1)}
-.bg-white\/60{background-color:rgba(255,255,255,.6)}
-
-/* Text colors */
-.text-gray-400{color:#9ca3af}.text-gray-600{color:#4b5563}.text-gray-700{color:#374151}
-.text-gray-800{color:#1f2937}.text-gray-900{color:#111827}
-.text-purple-100\/90{color:rgba(243,232,255,.9)}
-.text-purple-200{color:#e9d5ff}
-.text-purple-300{color:#d8b4fe}
-.text-purple-300\/80{color:rgba(216,180,254,.8)}
-.text-purple-700{color:#7e22ce}
-.text-purple-700\/70{color:rgba(126,34,206,.7)}
-.text-purple-800{color:#6b21a8}
-.text-purple-900{color:#581c87}
-.text-purple-950{color:#3b0764}
-.text-white{color:#fff}
 
 /* Typography */
 .font-bold{font-weight:700}.font-medium{font-weight:500}
@@ -191,41 +111,22 @@
 .text-lg{font-size:1.125rem;line-height:1.75rem}
 .text-sm{font-size:.875rem;line-height:1.25rem}
 .text-xs{font-size:.75rem;line-height:1rem}
-.tracking-wider{letter-spacing:.05em}
 .underline{text-decoration-line:underline}
-.uppercase{text-transform:uppercase}
 .whitespace-pre-line{white-space:pre-line}
 .leading-relaxed{line-height:1.625}
 
-/* Effects */
-.shadow-2xl{box-shadow:0 25px 50px -12px rgba(0,0,0,.25)}
-.shadow-md{box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1)}
-.shadow-xl{box-shadow:0 20px 25px -5px rgba(0,0,0,.1),0 8px 10px -6px rgba(0,0,0,.1)}
-.backdrop-blur-md{backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
-.backdrop-blur-sm{backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
-.transition-all{transition:all .15s ease}
-.transition-colors{transition:background-color .15s ease,color .15s ease,border-color .15s ease}
-
-/* Interactive states */
-.hover\:bg-purple-100\/50:hover{background-color:rgba(243,232,255,.5)}
-.hover\:bg-purple-200:hover{background-color:#e9d5ff}
-.hover\:bg-purple-400:hover{background-color:#c084fc}
-.hover\:text-purple-950:hover{color:#3b0764}
-.focus\:outline-none:focus{outline:none}
-.focus\:ring-2:focus{box-shadow:0 0 0 2px #c084fc}
-.focus\:ring-purple-400:focus{box-shadow:0 0 0 2px #c084fc}
-
-/* ---- Celestial theme: deep twilight surfaces instead of flat white cards ---- */
+/* ---- Flat, hairline-divided dashboard structure (replaces the boxed-card system) ---- */
 :root {
   color-scheme: dark;
   --bg-top: #1b1638;
   --bg-bottom: #0b0918;
+  --panel: #17132b;
   --border-soft: rgba(196,181,253,0.16);
-  --border-softer: rgba(196,181,253,0.09);
+  --border-softer: rgba(196,181,253,0.10);
   --text-heading: #f4eefc;
   --text-body: #c9bfe0;
   --text-muted: #8d81ab;
-  --accent-violet: #a78bfa;
+  --accent-violet: #7c3aed;
   --accent-violet-bright: #c4b5fd;
   --accent-gold: #f0c869;
 }
@@ -233,28 +134,37 @@
 body {
   background-color: var(--bg-bottom);
   background-image:
-    radial-gradient(640px 360px at 25% -6%, rgba(167,139,250,.20), transparent 60%),
-    radial-gradient(420px 260px at 95% 4%, rgba(240,200,105,.09), transparent 55%),
+    radial-gradient(640px 360px at 25% -6%, rgba(167,139,250,.16), transparent 60%),
+    radial-gradient(420px 260px at 95% 4%, rgba(240,200,105,.07), transparent 55%),
     linear-gradient(180deg, var(--bg-top), var(--bg-bottom) 70%);
   background-attachment: fixed;
   color: var(--text-body);
 }
 
-.app-header {
-  background: rgba(13,10,28,0.78);
-  border-bottom: 1px solid var(--border-soft);
-}
-
-.app-surface {
-  background: #1f1a3d;
+/* Single unified container for the whole app — replaces three separately
+   boxed/shadowed cards. Internal sections are divided by hairlines, not by
+   repeating another rounded, shadowed box. */
+.app-container {
+  background: var(--panel);
   border: 1px solid var(--border-soft);
-  box-shadow: 0 24px 48px -28px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.03);
+  border-radius: 1.25rem;
+  overflow: hidden;
 }
 
-.app-hero {
-  background: linear-gradient(155deg, #4c1d95 0%, #1e1b4b 100%);
-  border: 1px solid rgba(167,139,250,.32);
-  box-shadow: 0 28px 60px -30px rgba(76,29,149,.65);
+.app-block { padding: 1.75rem; }
+.app-block + .app-block { border-top: 1px solid var(--border-softer); }
+
+.dual-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  border-top: 1px solid var(--border-softer);
+}
+.app-subpanel { padding: 1.75rem; }
+.app-subpanel:not(:first-child) { border-top: 1px solid var(--border-softer); }
+
+@media (min-width: 480px) {
+  .dual-grid { grid-template-columns: 1fr 1fr; }
+  .app-subpanel:not(:first-child) { border-top: none; border-left: 1px solid var(--border-softer); }
 }
 
 .app-panel {
@@ -262,6 +172,7 @@ body {
   border: 1px solid var(--border-softer);
 }
 
+.kicker { font-size: .8125rem; font-weight: 600; color: var(--text-muted); }
 .app-heading { color: var(--text-heading); }
 .app-body-text { color: var(--text-body); }
 .app-subtle { color: var(--text-muted); }
@@ -272,12 +183,10 @@ body {
   color: var(--text-heading);
 }
 .app-field::-webkit-datetime-edit { color: var(--text-heading); }
-.app-field:focus { outline: none; box-shadow: 0 0 0 2px var(--accent-violet); border-color: var(--accent-violet); }
-
-.app-divider { border-color: var(--border-soft); }
+.app-field:focus { outline: 1px solid var(--accent-violet-bright); outline-offset: 1px; }
 
 .app-btn-ghost {
-  background: rgba(255,255,255,0.05);
+  background: transparent;
   color: var(--accent-violet-bright);
   border: 1px solid var(--border-soft);
 }
@@ -289,152 +198,155 @@ body {
 }
 
 .app-btn-primary {
-  background: linear-gradient(135deg, #7c3aed, #5b21b6);
+  background: var(--accent-violet);
   color: #fff;
   border: none;
 }
 
-/* History: a quiet ledger of hairline-divided rows instead of repeated boxed pills */
+/* History: a quiet ledger of hairline-divided rows, not repeated boxed pills */
 .history-row {
   display: flex; align-items: center; justify-content: space-between; gap: .75rem;
-  padding: .7rem .1rem;
+  padding: .65rem 0;
   border-bottom: 1px solid var(--border-softer);
-  cursor: pointer;
-  transition: background-color .12s ease;
 }
 .history-row:last-child { border-bottom: none; }
-.history-row:active { background: rgba(255,255,255,0.03); }
 .history-thumb {
-  width: 2.5rem; height: 3.4rem; object-fit: contain; border-radius: .5rem;
+  width: 2.5rem; height: 3.4rem; object-fit: contain; border-radius: .375rem;
   background: rgba(255,255,255,0.06);
   flex-shrink: 0;
 }
-
+.chart-panel {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border-softer);
+}
 
   </style>
 </head>
 <body class="pb-12 min-h-screen">
 
-  <header class="pt-12 pb-4 px-6 app-header backdrop-blur-md sticky top-0 z-10">
-    <div class="max-w-md mx-auto flex justify-between items-center gap-3">
+  <header class="pb-6 px-5">
+    <div class="max-w-md mx-auto flex justify-between items-start gap-4">
       <div class="flex items-center gap-3">
-        <svg id="moon-glyph" width="32" height="32" viewBox="0 0 32 32" style="flex-shrink:0;"></svg>
+        <svg id="moon-glyph" width="30" height="30" viewBox="0 0 32 32" style="flex-shrink:0;"></svg>
         <div>
           <h1 class="text-2xl font-serif font-bold app-heading">Celestial Tarot</h1>
           <p id="moon-phase-label" class="text-xs app-subtle font-medium">&nbsp;</p>
         </div>
       </div>
-      <button onclick="toggleKeyModal()" class="px-3 py-1.5 app-btn-ghost text-xs font-semibold rounded-full transition-all flex items-center gap-1">
+      <button onclick="toggleKeyModal()" class="px-3 py-1.5 app-btn-ghost text-xs font-semibold rounded-lg flex items-center gap-1.5">
         <svg class="icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="16" r="3.5"/><path d="M10.5 13.5L20 4"/><path d="M16.5 7.5l3 3"/><path d="M14 10l2 2"/></svg>
         Key
       </button>
     </div>
   </header>
 
-  <main class="max-w-md mx-auto px-4 pt-6 space-y-6">
+  <main class="max-w-md mx-auto px-4 pb-6">
+    <div class="app-container">
 
-    <section class="app-surface rounded-3xl p-6">
-      
-      <div class="flex justify-between items-center mb-5">
-        <label for="entry-date" class="text-sm font-semibold app-body-text">Select date</label>
-        <input type="date" id="entry-date" class="app-field rounded-lg px-3 py-1.5 text-sm">
-      </div>
+      <div class="app-block">
+        <h2 class="kicker mb-4">Today's Draw</h2>
 
-      <div class="mb-5">
-        <label for="card-select" class="block text-sm font-semibold app-body-text mb-2">Daily card draw (78 cards)</label>
-        <select id="card-select" class="w-full app-field rounded-xl px-3 py-2.5 text-sm">
-          <option value="">-- Select a Rider-Waite Card --</option>
-        </select>
-      </div>
-
-      <div id="reading-display-container" class="hidden border-t app-divider pt-5 space-y-4">
-        
-        <div class="flex flex-col items-center justify-center p-4 app-panel rounded-2xl">
-          <img id="card-image" src="" alt="Tarot Card Illustration" class="h-56 rounded-lg shadow-md object-contain mb-2">
-          <h3 id="card-title" class="text-sm font-serif font-bold app-heading"></h3>
+        <div class="flex justify-between items-center mb-5">
+          <label for="entry-date" class="text-sm font-medium app-subtle">Date</label>
+          <input type="date" id="entry-date" class="app-field rounded-lg px-3 py-1.5 text-sm">
         </div>
 
-        <div id="ai-analysis-container" class="pt-2">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-sm font-semibold app-body-text">Daily reading</span>
-            <span id="ai-status-badge" class="text-[10px] app-badge px-2 py-0.5 rounded-full font-bold">Saved Reading</span>
+        <div class="mb-2">
+          <label for="card-select" class="block text-sm font-medium app-subtle mb-2">Card (78-card deck)</label>
+          <select id="card-select" class="w-full app-field rounded-lg px-3 py-2.5 text-sm">
+            <option value="">Select a Rider-Waite card…</option>
+          </select>
+        </div>
+
+        <div id="reading-display-container" class="hidden mt-6 pt-6" style="border-top: 1px solid var(--border-softer);">
+
+          <div class="flex flex-col items-center justify-center p-4 app-panel rounded-lg">
+            <img id="card-image" src="" alt="Tarot Card Illustration" class="h-56 rounded object-contain mb-2">
+            <h3 id="card-title" class="text-sm font-serif font-bold app-heading"></h3>
           </div>
-          <div id="ai-loading" class="hidden py-6 text-center text-xs app-subtle italic">
-            <span class="spinner"></span> Generating reading via Gemini 3.5 Flash-Lite...
+
+          <div id="ai-analysis-container" class="mt-5">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-medium app-subtle">Daily Reading</span>
+              <span id="ai-status-badge" class="text-[10px] app-badge px-2 py-0.5 rounded-md font-semibold">Saved Reading</span>
+            </div>
+            <div id="ai-loading" class="hidden py-6 text-center text-xs app-subtle italic">
+              Generating reading via Gemini 3.5 Flash-Lite…
+            </div>
+            <div id="ai-analysis-text" class="text-sm leading-relaxed app-body-text font-serif app-panel p-4 rounded-lg whitespace-pre-line space-y-2"></div>
           </div>
-          <div id="ai-analysis-text" class="text-sm leading-relaxed app-body-text font-serif app-panel p-4 rounded-xl whitespace-pre-line space-y-2"></div>
-        </div>
 
+        </div>
       </div>
 
-    </section>
+      <div class="dual-grid">
+        <div class="app-subpanel">
+          <div class="flex justify-between items-start mb-4 gap-2">
+            <h2 class="kicker">History</h2>
+            <div class="flex gap-2">
+              <button id="export-text-btn" onclick="exportAsText()" title="Copy or share as text" class="text-xs px-2.5 py-1.5 app-btn-ghost rounded-lg font-medium flex items-center gap-1.5">
+                <svg class="icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M8 8l4-4 4 4"/><path d="M4 14v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5"/></svg>
+                Share
+              </button>
+              <button id="export-pdf-btn" onclick="exportToPDF()" title="Export as PDF" class="text-xs px-2.5 py-1.5 app-btn-ghost rounded-lg font-medium flex items-center gap-1.5">
+                <svg class="icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>
+                PDF
+              </button>
+            </div>
+          </div>
+          <div id="history-list" class="max-h-60 overflow-y-auto pr-1">
+            </div>
+        </div>
 
-    <section class="app-surface rounded-3xl p-6 space-y-4">
-      <div class="space-y-3">
-        <h2 class="text-lg font-serif font-bold app-heading">Stored card history</h2>
-        <div class="flex gap-2">
-          <button id="export-text-btn" onclick="exportAsText()" title="Copy or share as text" class="text-xs px-3 py-1.5 app-btn-ghost rounded-lg transition-colors font-medium flex items-center gap-1.5">
-            <svg class="icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M8 8l4-4 4 4"/><path d="M4 14v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5"/></svg>
-            Share
+        <div class="app-subpanel">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="kicker">Astrology</h2>
+            <span class="text-[10px] app-badge px-2 py-0.5 rounded-md font-semibold">Chart linked</span>
+          </div>
+
+          <div class="flex flex-col items-center justify-center p-4 chart-panel rounded-lg">
+            <svg viewBox="0 0 200 200" style="width:9rem;height:9rem;">
+              <circle cx="100" cy="100" r="90" fill="none" stroke="#c4b5fd" stroke-width="2" opacity="0.4"/>
+              <circle cx="100" cy="100" r="65" fill="none" stroke="#a78bfa" stroke-width="1.5" opacity="0.6"/>
+              <circle cx="100" cy="100" r="40" fill="none" stroke="#ddd6fe" stroke-width="1" opacity="0.3"/>
+              <line x1="10" y1="100" x2="190" y2="100" stroke="#c4b5fd" stroke-width="1" opacity="0.5"/>
+              <line x1="100" y1="10" x2="100" y2="190" stroke="#c4b5fd" stroke-width="1" opacity="0.5"/>
+              <line x1="36" y1="36" x2="164" y2="164" stroke="#c4b5fd" stroke-width="0.7" opacity="0.3"/>
+              <line x1="164" y1="36" x2="36" y2="164" stroke="#c4b5fd" stroke-width="0.7" opacity="0.3"/>
+              <circle cx="50" cy="60" r="4" fill="#fcd34d"/>
+              <circle cx="140" cy="70" r="4" fill="#f3e8ff"/>
+              <circle cx="80" cy="145" r="3" fill="#f472b6"/>
+            </svg>
+            <p class="text-[11px] text-center app-subtle font-medium mt-2">Sun: Scorpio · Moon: Cancer · ASC: Gemini</p>
+          </div>
+
+          <button onclick="generateAIAstroSynergy()" class="w-full py-3 mt-4 app-btn-primary font-semibold text-sm rounded-lg flex items-center justify-center gap-2">
+            <svg class="icon btn-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8L12 2z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15z"/></svg>
+            Analyze card trends
           </button>
-          <button id="export-pdf-btn" onclick="exportToPDF()" title="Export as PDF" class="text-xs px-3 py-1.5 app-btn-ghost rounded-lg transition-colors font-medium flex items-center gap-1.5">
-            <svg class="icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>
-            PDF
-          </button>
+
+          <div id="astro-loading" class="hidden text-center text-xs app-subtle italic py-2 mt-2">
+            Gemini 3.5 Flash is mapping your stored history…
+          </div>
+
+          <div id="astro-synergy-result" class="hidden text-xs leading-relaxed app-body-text font-serif italic app-panel p-4 rounded-lg mt-3 whitespace-pre-line">
+          </div>
         </div>
       </div>
 
-      <div id="history-list" class="max-h-60 overflow-y-auto pr-1">
-        </div>
-    </section>
-
-    <section class="app-hero rounded-3xl p-6 text-white space-y-4">
-      <div class="flex items-center justify-between">
-        <h2 class="text-lg font-serif font-bold text-purple-200">Astrological synergy</h2>
-        <span class="text-xs text-purple-300/80 bg-white/10 px-2 py-1 rounded-md">Chart linked</span>
-      </div>
-
-      <div class="flex flex-col items-center justify-center p-4 bg-purple-950/50 rounded-2xl border border-purple-500/30">
-        <svg viewBox="0 0 200 200" class="w-40 h-40">
-          <circle cx="100" cy="100" r="90" fill="none" stroke="#c4b5fd" stroke-width="2" opacity="0.4"/>
-          <circle cx="100" cy="100" r="65" fill="none" stroke="#a78bfa" stroke-width="1.5" opacity="0.6"/>
-          <circle cx="100" cy="100" r="40" fill="none" stroke="#ddd6fe" stroke-width="1" opacity="0.3"/>
-          <line x1="10" y1="100" x2="190" y2="100" stroke="#c4b5fd" stroke-width="1" opacity="0.5"/>
-          <line x1="100" y1="10" x2="100" y2="190" stroke="#c4b5fd" stroke-width="1" opacity="0.5"/>
-          <line x1="36" y1="36" x2="164" y2="164" stroke="#c4b5fd" stroke-width="0.7" opacity="0.3"/>
-          <line x1="164" y1="36" x2="36" y2="164" stroke="#c4b5fd" stroke-width="0.7" opacity="0.3"/>
-          <circle cx="50" cy="60" r="4" fill="#fcd34d"/>
-          <circle cx="140" cy="70" r="4" fill="#f3e8ff"/>
-          <circle cx="80" cy="145" r="3" fill="#f472b6"/>
-        </svg>
-        <p class="text-[11px] text-center text-purple-300 font-medium mt-2">Sun: Scorpio | Moon: Cancer | ASC: Gemini</p>
-      </div>
-
-      <button onclick="generateAIAstroSynergy()" class="w-full py-3 app-btn-primary font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
-        <svg class="icon btn-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8L12 2z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15z"/></svg>
-        Analyze card trends vs. natal chart
-      </button>
-
-      <div id="astro-loading" class="hidden text-center text-xs text-purple-200 italic py-2">
-        <span class="spinner"></span> Gemini 3.5 Flash is mapping your stored history...
-      </div>
-
-      <div id="astro-synergy-result" class="hidden text-xs leading-relaxed text-purple-100/90 font-serif italic bg-white/10 p-4 rounded-xl border border-white/10 mt-3 whitespace-pre-line">
-      </div>
-    </section>
-
+    </div>
   </main>
 
-  <div id="key-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-    <div class="app-surface rounded-3xl w-full max-w-sm p-6 shadow-2xl space-y-4">
+  <div id="key-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden p-4">
+    <div class="app-container w-full max-w-sm p-6 space-y-4">
       <h3 class="text-base font-serif font-bold app-heading">Gemini API key setup</h3>
       <p class="text-xs app-subtle leading-relaxed">
         Paste your Google AI Studio API key below. It's stored only on this device.
       </p>
-      <input type="password" id="gemini-key-input" placeholder="AIzaSy..." class="w-full app-field rounded-xl px-3 py-2 text-xs">
+      <input type="password" id="gemini-key-input" placeholder="AIzaSy..." class="w-full app-field rounded-lg px-3 py-2 text-xs">
       <div class="flex gap-2">
-        <button onclick="saveApiKey()" class="flex-1 py-2 app-btn-primary text-xs font-bold rounded-xl">Save key</button>
-        <button onclick="toggleKeyModal()" class="px-4 py-2 app-btn-ghost text-xs font-bold rounded-xl">Cancel</button>
+        <button onclick="saveApiKey()" class="flex-1 py-2 app-btn-primary text-xs font-semibold rounded-lg">Save key</button>
+        <button onclick="toggleKeyModal()" class="px-4 py-2 app-btn-ghost text-xs font-semibold rounded-lg">Cancel</button>
       </div>
     </div>
   </div>
@@ -663,22 +575,21 @@ body {
           transform: "translateX(-50%)",
           maxWidth: "90%",
           padding: "10px 18px",
-          borderRadius: "9999px",
+          borderRadius: "8px",
           fontSize: "13px",
           fontWeight: "600",
           color: "#fff",
           zIndex: "9999",
-          boxShadow: "0 10px 25px -5px rgba(0,0,0,0.25)",
-          transition: "opacity .2s ease",
+          border: "1px solid rgba(255,255,255,0.15)",
           textAlign: "center"
         });
         document.body.appendChild(toast);
       }
-      toast.style.backgroundColor = isError ? "#b91c1c" : "#581c87";
+      toast.style.backgroundColor = isError ? "#7f1d1d" : "#3b0764";
       toast.textContent = message;
-      toast.style.opacity = "1";
+      toast.style.display = "block";
       clearTimeout(toastTimeout);
-      toastTimeout = setTimeout(() => { toast.style.opacity = "0"; }, 2800);
+      toastTimeout = setTimeout(() => { toast.style.display = "none"; }, 2800);
     }
 
     // A real, computed moon phase for today — grounds the header in the app's
@@ -1046,7 +957,7 @@ Synthesize these stored card draws with their natal chart in clear, warm languag
       const originalLabel = exportBtn ? exportBtn.innerHTML : null;
 
       try {
-        if (exportBtn) exportBtn.innerHTML = "<span class=\"spinner\"></span> Preparing...";
+        if (exportBtn) exportBtn.innerHTML = "Preparing…";
         await ensureHtml2Pdf();
       } catch (err) {
         console.error(err);
