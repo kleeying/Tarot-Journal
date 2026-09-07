@@ -958,10 +958,10 @@ Synthesize these stored card draws with their natal chart in clear, warm languag
       if (html2pdfLoadPromise) return html2pdfLoadPromise;
       html2pdfLoadPromise = new Promise((resolve, reject) => {
         const script = document.createElement('script');
-        // Pinned to 0.9.3, not the newer 0.10.1: html2pdf.js's own maintainers
-        // flag unresolved blank-output bugs in the 0.10.x line and recommend
-        // staying on 0.9.3 until those are fixed.
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js';
+        // Pinned to the current stable release. (0.10.1 and 0.9.3 both had
+        // real blank-output problems in testing; 0.14.0 is the actively
+        // maintained current version.)
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.14.0/html2pdf.bundle.min.js';
         script.onload = () => resolve();
         script.onerror = () => reject(new Error('Failed to load PDF export library.'));
         document.head.appendChild(script);
@@ -982,6 +982,16 @@ Synthesize these stored card draws with their natal chart in clear, warm languag
         alert("Couldn't load the PDF export tool. Check your connection and try again.");
         return;
       }
+
+      // Wrapper collapses to zero height and clips overflow, so the export
+      // content never becomes visible or affects scrolling/layout — but unlike
+      // a fixed, off-screen-positioned element, it stays in the page's normal
+      // coordinate space. Combining "position: fixed" with html2canvas's
+      // windowWidth override is a known source of blank/mispositioned
+      // captures, since the two use different coordinate systems.
+      const wrapper = document.createElement('div');
+      wrapper.style.height = '0';
+      wrapper.style.overflow = 'hidden';
 
       const element = document.createElement('div');
       element.className = "p-6 bg-white text-gray-900";
@@ -1007,20 +1017,14 @@ Synthesize these stored card draws with their natal chart in clear, warm languag
       });
 
       element.innerHTML = htmlContent;
-
-      // Must be attached to the live DOM (off-screen, not display:none) so html2canvas
-      // can compute real layout/dimensions. A detached node breaks html2canvas's
-      // measurements, which is what caused the blank/garbled pages.
-      element.style.position = "fixed";
-      element.style.top = "0";
-      element.style.left = "-9999px";
-      document.body.appendChild(element);
+      wrapper.appendChild(element);
+      document.body.appendChild(wrapper);
 
       const opt = {
         margin:       0.5,
         filename:     'tarot_journal_history.pdf',
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, windowWidth: 720, useCORS: true },
+        html2canvas:  { scale: 2, useCORS: true },
         jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' },
         pagebreak:    { mode: ['css', 'avoid-all'] }
       };
@@ -1031,7 +1035,7 @@ Synthesize these stored card draws with their natal chart in clear, warm languag
         console.error('PDF export failed:', err);
         alert("PDF export failed. Please try again.");
       } finally {
-        document.body.removeChild(element);
+        document.body.removeChild(wrapper);
         if (exportBtn) exportBtn.innerHTML = originalLabel;
       }
     }
