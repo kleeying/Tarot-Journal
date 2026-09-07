@@ -2,24 +2,160 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tarot Journal">
+  <meta name="theme-color" content="#581c87">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="icon" href="icon-180.png">
+  <!-- Warm up the connection to the Gemini API host so the first daily-reading call starts faster -->
+  <link rel="preconnect" href="https://generativelanguage.googleapis.com">
   <title>Celestial Tarot - Gemini 3.5 Flash</title>
-
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <style>
     body {
       background-color: #f6f4fb;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       -webkit-tap-highlight-color: transparent;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
     }
     .card-shadow {
       box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
     }
+    header {
+      padding-top: calc(3rem + env(safe-area-inset-top));
+    }
+    /* iOS Safari auto-zooms the page on focus of any input/select under 16px.
+       Force 16px on the actual controls (visual size is unaffected, they still
+       look the same as before via their existing text-sm/text-xs classes). */
+    input, select {
+      font-size: 16px !important;
+    }
+
+/* ---- Minimal hand-authored utility CSS (replaces Tailwind CDN JIT) ---- */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Layout / display */
+.block{display:block}.flex{display:flex}.flex-1{flex:1 1 0%}.flex-col{flex-direction:column}
+.hidden{display:none}.fixed{position:fixed}.sticky{position:sticky}
+.inset-0{top:0;right:0;bottom:0;left:0}.top-0{top:0}.z-10{z-index:10}.z-50{z-index:50}
+.min-h-screen{min-height:100vh}.overflow-y-auto{overflow-y:auto}
+.cursor-pointer{cursor:pointer}.object-contain{object-fit:contain}
+
+/* Flex helpers */
+.items-center{align-items:center}.justify-between{justify-content:space-between}
+.justify-center{justify-content:center}
+.gap-1{gap:.25rem}.gap-2{gap:.5rem}.gap-3{gap:.75rem}
+
+/* Spacing */
+.mb-2{margin-bottom:.5rem}.mb-5{margin-bottom:1.25rem}
+.mt-2{margin-top:.5rem}.mt-3{margin-top:.75rem}
+.mx-auto{margin-left:auto;margin-right:auto}
+.p-3{padding:.75rem}.p-4{padding:1rem}.p-6{padding:1.5rem}
+.pb-12{padding-bottom:3rem}.pb-4{padding-bottom:1rem}.pr-1{padding-right:.25rem}
+.pt-12{padding-top:3rem}.pt-2{padding-top:.5rem}.pt-5{padding-top:1.25rem}.pt-6{padding-top:1.5rem}
+.px-2{padding-left:.5rem;padding-right:.5rem}.px-3{padding-left:.75rem;padding-right:.75rem}
+.px-4{padding-left:1rem;padding-right:1rem}.px-6{padding-left:1.5rem;padding-right:1.5rem}
+.py-0\.5{padding-top:.125rem;padding-bottom:.125rem}.py-1{padding-top:.25rem;padding-bottom:.25rem}
+.py-1\.5{padding-top:.375rem;padding-bottom:.375rem}.py-2{padding-top:.5rem;padding-bottom:.5rem}
+.py-2\.5{padding-top:.625rem;padding-bottom:.625rem}.py-3{padding-top:.75rem;padding-bottom:.75rem}
+.py-4{padding-top:1rem;padding-bottom:1rem}.py-6{padding-top:1.5rem;padding-bottom:1.5rem}
+.space-y-2>*+*{margin-top:.5rem}.space-y-3>*+*{margin-top:.75rem}
+.space-y-4>*+*{margin-top:1rem}.space-y-6>*+*{margin-top:1.5rem}
+
+/* Sizing */
+.h-10{height:2.5rem}.h-40{height:10rem}.h-56{height:14rem}
+.max-h-60{max-height:15rem}.max-w-md{max-width:28rem}.max-w-sm{max-width:24rem}
+.w-40{width:10rem}.w-7{width:1.75rem}.w-full{width:100%}
+
+/* Borders / radius */
+.border{border-width:1px;border-style:solid;border-color:#e5e7eb}
+.border-b{border-bottom-width:1px;border-style:solid;border-color:#e5e7eb}
+.border-t{border-top-width:1px;border-style:solid;border-color:#e5e7eb}
+.rounded{border-radius:.25rem}.rounded-2xl{border-radius:1rem}.rounded-3xl{border-radius:1.5rem}
+.rounded-full{border-radius:9999px}.rounded-lg{border-radius:.5rem}
+.rounded-md{border-radius:.375rem}.rounded-xl{border-radius:.75rem}
+
+/* Border colors */
+.border-purple-50{border-color:#faf5ff}
+.border-purple-100{border-color:#f3e8ff}
+.border-purple-100\/50{border-color:rgba(243,232,255,.5)}
+.border-purple-100\/60{border-color:rgba(243,232,255,.6)}
+.border-purple-100\/80{border-color:rgba(243,232,255,.8)}
+.border-purple-200{border-color:#e9d5ff}
+.border-purple-500\/30{border-color:rgba(168,85,247,.3)}
+.border-white\/10{border-color:rgba(255,255,255,.1)}
+
+/* Backgrounds */
+.bg-black\/50{background-color:rgba(0,0,0,.5)}
+.bg-gradient-to-br{background-image:linear-gradient(to bottom right,var(--tw-from),var(--tw-to))}
+.from-purple-900{--tw-from:#581c87}
+.to-indigo-950{--tw-to:#1e1b4b}
+.bg-gray-100{background-color:#f3f4f6}
+.bg-purple-100{background-color:#f3e8ff}
+.bg-purple-50\/30{background-color:rgba(250,245,255,.3)}
+.bg-purple-50\/40{background-color:rgba(250,245,255,.4)}
+.bg-purple-50\/50{background-color:rgba(250,245,255,.5)}
+.bg-purple-50\/60{background-color:rgba(250,245,255,.6)}
+.bg-purple-500{background-color:#a855f7}
+.bg-purple-800{background-color:#6b21a8}
+.bg-purple-950\/50{background-color:rgba(59,7,100,.5)}
+.bg-white{background-color:#fff}
+.bg-white\/10{background-color:rgba(255,255,255,.1)}
+.bg-white\/60{background-color:rgba(255,255,255,.6)}
+
+/* Text colors */
+.text-gray-400{color:#9ca3af}.text-gray-600{color:#4b5563}.text-gray-700{color:#374151}
+.text-gray-800{color:#1f2937}.text-gray-900{color:#111827}
+.text-purple-100\/90{color:rgba(243,232,255,.9)}
+.text-purple-200{color:#e9d5ff}
+.text-purple-300{color:#d8b4fe}
+.text-purple-300\/80{color:rgba(216,180,254,.8)}
+.text-purple-700{color:#7e22ce}
+.text-purple-700\/70{color:rgba(126,34,206,.7)}
+.text-purple-800{color:#6b21a8}
+.text-purple-900{color:#581c87}
+.text-purple-950{color:#3b0764}
+.text-white{color:#fff}
+
+/* Typography */
+.font-bold{font-weight:700}.font-medium{font-weight:500}
+.font-normal{font-weight:400}.font-semibold{font-weight:600}
+.font-serif{font-family:ui-serif,Georgia,Cambria,"Times New Roman",Times,serif}
+.italic{font-style:italic}
+.text-2xl{font-size:1.5rem;line-height:2rem}
+.text-\[10px\]{font-size:10px}.text-\[11px\]{font-size:11px}
+.text-base{font-size:1rem;line-height:1.5rem}
+.text-center{text-align:center}
+.text-lg{font-size:1.125rem;line-height:1.75rem}
+.text-sm{font-size:.875rem;line-height:1.25rem}
+.text-xs{font-size:.75rem;line-height:1rem}
+.tracking-wider{letter-spacing:.05em}
+.underline{text-decoration-line:underline}
+.uppercase{text-transform:uppercase}
+.whitespace-pre-line{white-space:pre-line}
+.leading-relaxed{line-height:1.625}
+
+/* Effects */
+.shadow-2xl{box-shadow:0 25px 50px -12px rgba(0,0,0,.25)}
+.shadow-md{box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1)}
+.shadow-xl{box-shadow:0 20px 25px -5px rgba(0,0,0,.1),0 8px 10px -6px rgba(0,0,0,.1)}
+.backdrop-blur-md{backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.backdrop-blur-sm{backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.transition-all{transition:all .15s ease}
+.transition-colors{transition:background-color .15s ease,color .15s ease,border-color .15s ease}
+
+/* Interactive states */
+.hover\:bg-purple-100\/50:hover{background-color:rgba(243,232,255,.5)}
+.hover\:bg-purple-200:hover{background-color:#e9d5ff}
+.hover\:bg-purple-400:hover{background-color:#c084fc}
+.hover\:text-purple-950:hover{color:#3b0764}
+.focus\:outline-none:focus{outline:none}
+.focus\:ring-2:focus{box-shadow:0 0 0 2px #c084fc}
+.focus\:ring-purple-400:focus{box-shadow:0 0 0 2px #c084fc}
+
   </style>
 </head>
 <body class="text-gray-800 pb-12 min-h-screen">
@@ -77,7 +213,7 @@
     <section class="bg-white rounded-3xl p-6 card-shadow border border-purple-50 space-y-4">
       <div class="flex justify-between items-center">
         <h2 class="text-lg font-serif font-bold text-purple-950">Stored Card History</h2>
-        <button onclick="exportToPDF()" class="text-xs px-3 py-1.5 bg-purple-100 text-purple-800 rounded-lg hover:bg-purple-200 transition-colors font-medium flex items-center gap-1">
+        <button id="export-pdf-btn" onclick="exportToPDF()" class="text-xs px-3 py-1.5 bg-purple-100 text-purple-800 rounded-lg hover:bg-purple-200 transition-colors font-medium flex items-center gap-1">
           📥 Export PDF
         </button>
       </div>
@@ -225,6 +361,9 @@
     let db = null;
     let journalData = {};
     let savedApiKeyVal = "";
+    // Decided once at startup and used consistently everywhere, so reads and
+    // writes never end up split across IndexedDB and localStorage.
+    let storageMode = "indexeddb";
 
     function initDB() {
       return new Promise((resolve, reject) => {
@@ -252,12 +391,17 @@
       });
     }
 
-    async function loadAllFromDB() {
-      if (!db) await initDB();
-      return new Promise((resolve) => {
+    function loadAllFromDB() {
+      if (storageMode === "localstorage") {
+        journalData = JSON.parse(localStorage.getItem("tarot_journal_db") || "{}");
+        savedApiKeyVal = localStorage.getItem("gemini_api_key") || "";
+        document.getElementById("gemini-key-input").value = savedApiKeyVal;
+        return Promise.resolve();
+      }
+
+      return new Promise((resolve, reject) => {
         const tx = db.transaction([HISTORY_STORE, SETTINGS_STORE], "readonly");
-        
-        // Load Cards History
+
         const historyStore = tx.objectStore(HISTORY_STORE);
         const historyReq = historyStore.getAll();
         historyReq.onsuccess = () => {
@@ -267,7 +411,6 @@
           });
         };
 
-        // Load API Key
         const settingsStore = tx.objectStore(SETTINGS_STORE);
         const keyReq = settingsStore.get("gemini_api_key");
         keyReq.onsuccess = () => {
@@ -277,32 +420,109 @@
           }
         };
 
-        tx.oncomplete = () => {
-          resolve();
-        };
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error);
       });
     }
 
-    async function saveCardToDB(dateStr, entryData) {
-      if (!db) await initDB();
-      const tx = db.transaction(HISTORY_STORE, "readwrite");
-      tx.objectStore(HISTORY_STORE).put({ date: dateStr, data: entryData });
+    function saveCardToDB(dateStr, entryData) {
+      if (storageMode === "localstorage") {
+        try {
+          localStorage.setItem("tarot_journal_db", JSON.stringify(journalData));
+          return Promise.resolve();
+        } catch (err) {
+          return Promise.reject(err);
+        }
+      }
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(HISTORY_STORE, "readwrite");
+        tx.objectStore(HISTORY_STORE).put({ date: dateStr, data: entryData });
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error);
+      });
     }
 
-    async function deleteCardFromDB(dateStr) {
-      if (!db) await initDB();
-      const tx = db.transaction(HISTORY_STORE, "readwrite");
-      tx.objectStore(HISTORY_STORE).delete(dateStr);
+    function deleteCardFromDB(dateStr) {
+      if (storageMode === "localstorage") {
+        try {
+          localStorage.setItem("tarot_journal_db", JSON.stringify(journalData));
+          return Promise.resolve();
+        } catch (err) {
+          return Promise.reject(err);
+        }
+      }
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(HISTORY_STORE, "readwrite");
+        tx.objectStore(HISTORY_STORE).delete(dateStr);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error);
+      });
     }
 
-    async function saveKeyToDB(keyVal) {
-      if (!db) await initDB();
-      const tx = db.transaction(SETTINGS_STORE, "readwrite");
-      tx.objectStore(SETTINGS_STORE).put({ key: "gemini_api_key", value: keyVal });
+    function saveKeyToDB(keyVal) {
       savedApiKeyVal = keyVal;
+      if (storageMode === "localstorage") {
+        try {
+          localStorage.setItem("gemini_api_key", keyVal);
+          return Promise.resolve();
+        } catch (err) {
+          return Promise.reject(err);
+        }
+      }
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(SETTINGS_STORE, "readwrite");
+        tx.objectStore(SETTINGS_STORE).put({ key: "gemini_api_key", value: keyVal });
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error);
+      });
+    }
+
+    // Lightweight, non-blocking status message — replaces alert() so a daily-use
+    // app doesn't interrupt the user with a modal dialog on every save.
+    let toastTimeout = null;
+    function showToast(message, isError = false) {
+      let toast = document.getElementById("app-toast");
+      if (!toast) {
+        toast = document.createElement("div");
+        toast.id = "app-toast";
+        Object.assign(toast.style, {
+          position: "fixed",
+          left: "50%",
+          bottom: "calc(20px + env(safe-area-inset-bottom))",
+          transform: "translateX(-50%)",
+          maxWidth: "90%",
+          padding: "10px 18px",
+          borderRadius: "9999px",
+          fontSize: "13px",
+          fontWeight: "600",
+          color: "#fff",
+          zIndex: "9999",
+          boxShadow: "0 10px 25px -5px rgba(0,0,0,0.25)",
+          transition: "opacity .2s ease",
+          textAlign: "center"
+        });
+        document.body.appendChild(toast);
+      }
+      toast.style.backgroundColor = isError ? "#b91c1c" : "#581c87";
+      toast.textContent = message;
+      toast.style.opacity = "1";
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => { toast.style.opacity = "0"; }, 2800);
     }
 
     // --- MAIN APP LOGIC ---
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch((err) => {
+          console.warn("Service worker registration failed:", err);
+        });
+      });
+    }
+
     document.addEventListener("DOMContentLoaded", async () => {
       const today = new Date().toISOString().split('T')[0];
       const dateInput = document.getElementById("entry-date");
@@ -310,14 +530,23 @@
 
       populateDropdown();
 
-      // Retrieve permanently stored history and key from IndexedDB
+      // Retrieve permanently stored history and key. If IndexedDB can't be
+      // opened (private browsing, storage pressure, etc.) fall back to
+      // localStorage — and stay there consistently for the rest of the
+      // session so reads and writes never split across the two stores.
       try {
         await initDB();
+        storageMode = "indexeddb";
+      } catch (err) {
+        console.warn("IndexedDB unavailable, falling back to localStorage:", err);
+        storageMode = "localstorage";
+      }
+
+      try {
         await loadAllFromDB();
       } catch (err) {
-        console.warn("Falling back to localStorage:", err);
-        journalData = JSON.parse(localStorage.getItem('tarot_journal_db')) || {};
-        savedApiKeyVal = localStorage.getItem('gemini_api_key') || "";
+        console.error("Failed to load saved history:", err);
+        showToast("Couldn't load your saved history.", true);
       }
 
       dateInput.addEventListener("change", loadEntryForDate);
@@ -333,11 +562,16 @@
 
     async function saveApiKey() {
       const key = document.getElementById("gemini-key-input").value.trim();
-      await saveKeyToDB(key);
-      localStorage.setItem('gemini_api_key', key); // Fallback copy
-      toggleKeyModal();
-      alert("API Key permanently saved to iOS device database!");
+      try {
+        await saveKeyToDB(key);
+        toggleKeyModal();
+        showToast("API key saved.");
+      } catch (err) {
+        console.error("Failed to save API key:", err);
+        showToast("Couldn't save the API key — please try again.", true);
+      }
     }
+
 
     function populateDropdown() {
       const selectEl = document.getElementById("card-select");
@@ -361,7 +595,12 @@
 
       if (!selectedName) {
         delete journalData[selectedDate];
-        await deleteCardFromDB(selectedDate);
+        try {
+          await deleteCardFromDB(selectedDate);
+        } catch (err) {
+          console.error("Failed to delete entry:", err);
+          showToast("Couldn't remove that entry — please try again.", true);
+        }
         loadEntryForDate();
         renderHistory();
         return;
@@ -377,25 +616,36 @@
 
       const aiAnalysis = await fetchGeminiCardReading(selectedName);
 
-      document.getElementById("ai-loading").classList.add("hidden");
-
       const entryData = {
         card: cardObj,
         analysis: aiAnalysis,
         timestamp: new Date().toISOString()
       };
 
+      // The reading always gets recorded against the date it was drawn for,
+      // even if the user has since navigated away from that date.
       journalData[selectedDate] = entryData;
 
-      // Save to IndexedDB
-      await saveCardToDB(selectedDate, entryData);
-      
-      loadEntryForDate();
+      try {
+        await saveCardToDB(selectedDate, entryData);
+      } catch (err) {
+        console.error("Failed to save entry:", err);
+        showToast("Reading generated, but saving it failed — please retry.", true);
+      }
+
       renderHistory();
+
+      // Guard against a race: if the user switched to a different date while
+      // this reading was generating, don't clobber what they're now looking at.
+      const isStillOnSameDate = document.getElementById("entry-date").value === selectedDate;
+      if (isStillOnSameDate) {
+        document.getElementById("ai-loading").classList.add("hidden");
+        loadEntryForDate();
+      }
     }
 
     async function fetchGeminiCardReading(cardName) {
-      const apiKey = savedApiKeyVal || localStorage.getItem('gemini_api_key');
+      const apiKey = savedApiKeyVal;
       if (!apiKey) {
         return `⚠️ API Key Missing:\nClick '🔑 Key Status' above to paste your key and save it permanently.`;
       }
@@ -565,7 +815,38 @@ Synthesize these stored card draws with their natal chart in clear, warm languag
       }
     }
 
-    function exportToPDF() {
+    // html2pdf.js (~400KB) is only needed if the user actually exports a PDF,
+    // which is occasional, not part of the daily flow. Loading it in <head> would
+    // cost that data on every single home-screen launch. Instead we fetch it once,
+    // on demand, and cache the loaded script for the rest of the session.
+    let html2pdfLoadPromise = null;
+    function ensureHtml2Pdf() {
+      if (window.html2pdf) return Promise.resolve();
+      if (html2pdfLoadPromise) return html2pdfLoadPromise;
+      html2pdfLoadPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Failed to load PDF export library.'));
+        document.head.appendChild(script);
+      });
+      return html2pdfLoadPromise;
+    }
+
+    async function exportToPDF() {
+      const exportBtn = document.getElementById('export-pdf-btn');
+      const originalLabel = exportBtn ? exportBtn.innerHTML : null;
+
+      try {
+        if (exportBtn) exportBtn.innerHTML = "⏳ Preparing...";
+        await ensureHtml2Pdf();
+      } catch (err) {
+        console.error(err);
+        if (exportBtn) exportBtn.innerHTML = originalLabel;
+        alert("Couldn't load the PDF export tool. Check your connection and try again.");
+        return;
+      }
+
       const element = document.createElement('div');
       element.className = "p-6 bg-white text-gray-900";
 
@@ -608,12 +889,15 @@ Synthesize these stored card draws with their natal chart in clear, warm languag
         pagebreak:    { mode: ['css', 'avoid-all'] }
       };
 
-      html2pdf().set(opt).from(element).save().then(() => {
-        document.body.removeChild(element);
-      }).catch((err) => {
+      try {
+        await html2pdf().set(opt).from(element).save();
+      } catch (err) {
         console.error('PDF export failed:', err);
+        alert("PDF export failed. Please try again.");
+      } finally {
         document.body.removeChild(element);
-      });
+        if (exportBtn) exportBtn.innerHTML = originalLabel;
+      }
     }
   </script>
 </body>
