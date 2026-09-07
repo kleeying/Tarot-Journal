@@ -825,7 +825,10 @@ Synthesize these stored card draws with their natal chart in clear, warm languag
       if (html2pdfLoadPromise) return html2pdfLoadPromise;
       html2pdfLoadPromise = new Promise((resolve, reject) => {
         const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+        // Pinned to 0.9.3, not the newer 0.10.1: html2pdf.js's own maintainers
+        // flag unresolved blank-output bugs in the 0.10.x line and recommend
+        // staying on 0.9.3 until those are fixed.
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js';
         script.onload = () => resolve();
         script.onerror = () => reject(new Error('Failed to load PDF export library.'));
         document.head.appendChild(script);
