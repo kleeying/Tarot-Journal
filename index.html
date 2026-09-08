@@ -220,11 +220,100 @@ body {
   border: 1px solid var(--border-softer);
 }
 
+/* ---- App chrome: sticky header + fixed bottom tab bar ----
+   These are the ONLY two surfaces using backdrop-filter. Restricting the
+   blur to just these two (small, non-overlapping) layers keeps GPU cost low
+   on an A14 chip — everything else uses plain semi-opaque panels instead of
+   glass, which look almost identical scrolling underneath a blurred bar but
+   cost nothing to render. */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  padding-top: calc(0.9rem + env(safe-area-inset-top));
+  padding-bottom: 0.9rem;
+  background: rgba(11, 9, 24, 0.72);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+  border-bottom: 1px solid var(--border-softer);
+}
+
+.tab-bar {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 40;
+  display: flex;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: rgba(11, 9, 24, 0.78);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+  border-top: 1px solid var(--border-softer);
+}
+
+.tab-btn {
+  flex: 1 1 0%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.6rem 0 0.5rem;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.tab-btn svg { width: 20px; height: 20px; opacity: 0.75; transition: opacity .15s, transform .15s; }
+.tab-btn.active { color: var(--accent-violet-bright); }
+.tab-btn.active svg { opacity: 1; transform: translateY(-1px); }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; animation: panelIn .22s ease; }
+@keyframes panelIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Reduce/skip motion for users who ask for it, and it's cheap to respect */
+@media (prefers-reduced-motion: reduce) {
+  .tab-panel.active, .card-reveal, .skeleton { animation: none !important; }
+}
+
+/* ---- Skeleton loading state for the card image (replaces plain "Generating…" text) ---- */
+.card-skeleton {
+  width: 9rem;
+  height: 14rem;
+  border-radius: .5rem;
+  background: linear-gradient(100deg,
+    rgba(255,255,255,0.05) 30%,
+    rgba(255,255,255,0.10) 50%,
+    rgba(255,255,255,0.05) 70%);
+  background-size: 200% 100%;
+  animation: shimmer 1.3s ease-in-out infinite;
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* Card image "reveal" — plays once each time a new card is drawn/loaded */
+.card-reveal { animation: cardReveal .32s cubic-bezier(.22,.9,.3,1); }
+@keyframes cardReveal {
+  from { opacity: 0; transform: scale(.93) translateY(6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Custom chevron on the native <select>, so it doesn't look like a bare
+   browser control sitting on a themed background. */
+select.app-field {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238d81ab' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.25rem;
+}
+
   </style>
 </head>
-<body class="pb-12 min-h-screen">
+<body class="min-h-screen" style="padding-bottom: calc(4.75rem + env(safe-area-inset-bottom));">
 
-  <header class="pb-6 px-5">
+  <header class="app-header px-5">
     <div class="max-w-md mx-auto flex justify-between items-start gap-4">
       <div class="flex items-center gap-3">
         <svg id="moon-glyph" width="30" height="30" viewBox="0 0 32 32" style="flex-shrink:0;"></svg>
@@ -240,9 +329,9 @@ body {
     </div>
   </header>
 
-  <main class="max-w-md mx-auto px-4 pb-6">
-    <div class="app-container">
+  <main class="max-w-md mx-auto px-4 pt-4 pb-6">
 
+    <section id="panel-today" class="tab-panel active app-container">
       <div class="app-block">
         <h2 class="kicker mb-4">Today's Draw</h2>
 
@@ -261,7 +350,10 @@ body {
         <div id="reading-display-container" class="hidden mt-6 pt-6" style="border-top: 1px solid var(--border-softer);">
 
           <div class="flex flex-col items-center justify-center p-4 app-panel rounded-lg">
-            <img id="card-image" src="" alt="Tarot Card Illustration" class="h-56 rounded object-contain mb-2">
+            <div id="card-image-wrap" style="position:relative;">
+              <div id="card-skeleton" class="card-skeleton hidden"></div>
+              <img id="card-image" src="" alt="Tarot Card Illustration" class="h-56 rounded object-contain mb-2">
+            </div>
             <h3 id="card-title" class="text-sm font-serif font-bold app-heading"></h3>
           </div>
 
@@ -278,64 +370,81 @@ body {
 
         </div>
       </div>
+    </section>
 
-      <div class="dual-grid">
-        <div class="app-subpanel">
-          <div class="flex justify-between items-start mb-4 gap-2">
-            <h2 class="kicker">History</h2>
-            <div class="flex gap-2">
-              <button id="export-text-btn" onclick="exportAsText()" title="Copy or share as text" class="text-xs px-2.5 py-1.5 app-btn-ghost rounded-lg font-medium flex items-center gap-1.5">
-                <svg class="icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M8 8l4-4 4 4"/><path d="M4 14v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5"/></svg>
-                Share
-              </button>
-              <button id="export-pdf-btn" onclick="exportToPDF()" title="Export as PDF" class="text-xs px-2.5 py-1.5 app-btn-ghost rounded-lg font-medium flex items-center gap-1.5">
-                <svg class="icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>
-                PDF
-              </button>
-            </div>
+    <section id="panel-history" class="tab-panel app-container">
+      <div class="app-block">
+        <div class="flex justify-between items-start mb-4 gap-2">
+          <h2 class="kicker">History</h2>
+          <div class="flex gap-2">
+            <button id="export-text-btn" onclick="exportAsText()" title="Copy or share as text" class="text-xs px-2.5 py-1.5 app-btn-ghost rounded-lg font-medium flex items-center gap-1.5">
+              <svg class="icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M8 8l4-4 4 4"/><path d="M4 14v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5"/></svg>
+              Share
+            </button>
+            <button id="export-pdf-btn" onclick="exportToPDF()" title="Export as PDF" class="text-xs px-2.5 py-1.5 app-btn-ghost rounded-lg font-medium flex items-center gap-1.5">
+              <svg class="icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>
+              PDF
+            </button>
           </div>
-          <div id="history-list" class="max-h-60 overflow-y-auto pr-1">
-            </div>
+        </div>
+        <div id="history-list" class="pr-1">
+          </div>
+      </div>
+    </section>
+
+    <section id="panel-astro" class="tab-panel app-container">
+      <div class="app-block">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="kicker">Astrology</h2>
+          <span class="text-[10px] app-badge px-2 py-0.5 rounded-md font-semibold">Chart linked</span>
         </div>
 
-        <div class="app-subpanel">
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="kicker">Astrology</h2>
-            <span class="text-[10px] app-badge px-2 py-0.5 rounded-md font-semibold">Chart linked</span>
-          </div>
+        <div class="flex flex-col items-center justify-center p-4 chart-panel rounded-lg">
+          <svg viewBox="0 0 200 200" style="width:9rem;height:9rem;">
+            <circle cx="100" cy="100" r="90" fill="none" stroke="#c4b5fd" stroke-width="2" opacity="0.4"/>
+            <circle cx="100" cy="100" r="65" fill="none" stroke="#a78bfa" stroke-width="1.5" opacity="0.6"/>
+            <circle cx="100" cy="100" r="40" fill="none" stroke="#ddd6fe" stroke-width="1" opacity="0.3"/>
+            <line x1="10" y1="100" x2="190" y2="100" stroke="#c4b5fd" stroke-width="1" opacity="0.5"/>
+            <line x1="100" y1="10" x2="100" y2="190" stroke="#c4b5fd" stroke-width="1" opacity="0.5"/>
+            <line x1="36" y1="36" x2="164" y2="164" stroke="#c4b5fd" stroke-width="0.7" opacity="0.3"/>
+            <line x1="164" y1="36" x2="36" y2="164" stroke="#c4b5fd" stroke-width="0.7" opacity="0.3"/>
+            <circle cx="50" cy="60" r="4" fill="#fcd34d"/>
+            <circle cx="140" cy="70" r="4" fill="#f3e8ff"/>
+            <circle cx="80" cy="145" r="3" fill="#f472b6"/>
+          </svg>
+          <p class="text-[11px] text-center app-subtle font-medium mt-2">Sun: Scorpio · Moon: Cancer · ASC: Gemini</p>
+        </div>
 
-          <div class="flex flex-col items-center justify-center p-4 chart-panel rounded-lg">
-            <svg viewBox="0 0 200 200" style="width:9rem;height:9rem;">
-              <circle cx="100" cy="100" r="90" fill="none" stroke="#c4b5fd" stroke-width="2" opacity="0.4"/>
-              <circle cx="100" cy="100" r="65" fill="none" stroke="#a78bfa" stroke-width="1.5" opacity="0.6"/>
-              <circle cx="100" cy="100" r="40" fill="none" stroke="#ddd6fe" stroke-width="1" opacity="0.3"/>
-              <line x1="10" y1="100" x2="190" y2="100" stroke="#c4b5fd" stroke-width="1" opacity="0.5"/>
-              <line x1="100" y1="10" x2="100" y2="190" stroke="#c4b5fd" stroke-width="1" opacity="0.5"/>
-              <line x1="36" y1="36" x2="164" y2="164" stroke="#c4b5fd" stroke-width="0.7" opacity="0.3"/>
-              <line x1="164" y1="36" x2="36" y2="164" stroke="#c4b5fd" stroke-width="0.7" opacity="0.3"/>
-              <circle cx="50" cy="60" r="4" fill="#fcd34d"/>
-              <circle cx="140" cy="70" r="4" fill="#f3e8ff"/>
-              <circle cx="80" cy="145" r="3" fill="#f472b6"/>
-            </svg>
-            <p class="text-[11px] text-center app-subtle font-medium mt-2">Sun: Scorpio · Moon: Cancer · ASC: Gemini</p>
-          </div>
+        <button onclick="generateAIAstroSynergy()" class="w-full py-3 mt-4 app-btn-primary font-semibold text-sm rounded-lg flex items-center justify-center gap-2">
+          <svg class="icon btn-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8L12 2z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15z"/></svg>
+          Analyze card trends
+        </button>
 
-          <button onclick="generateAIAstroSynergy()" class="w-full py-3 mt-4 app-btn-primary font-semibold text-sm rounded-lg flex items-center justify-center gap-2">
-            <svg class="icon btn-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8L12 2z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15z"/></svg>
-            Analyze card trends
-          </button>
+        <div id="astro-loading" class="hidden text-center text-xs app-subtle italic py-2 mt-2">
+          Gemini 3.5 Flash is mapping your stored history…
+        </div>
 
-          <div id="astro-loading" class="hidden text-center text-xs app-subtle italic py-2 mt-2">
-            Gemini 3.5 Flash is mapping your stored history…
-          </div>
-
-          <div id="astro-synergy-result" class="hidden text-xs leading-relaxed app-body-text font-serif italic app-panel p-4 rounded-lg mt-3 whitespace-pre-line">
-          </div>
+        <div id="astro-synergy-result" class="hidden text-xs leading-relaxed app-body-text font-serif italic app-panel p-4 rounded-lg mt-3 whitespace-pre-line">
         </div>
       </div>
+    </section>
 
-    </div>
   </main>
+
+  <nav class="tab-bar">
+    <button class="tab-btn active" data-tab="today" onclick="showTab('today')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Today
+    </button>
+    <button class="tab-btn" data-tab="history" onclick="showTab('history')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+      History
+    </button>
+    <button class="tab-btn" data-tab="astro" onclick="showTab('astro')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18 9 9 0 0 1 0-18"/></svg>
+      Astro
+    </button>
+  </nav>
 
   <div id="key-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden p-4">
     <div class="app-container w-full max-w-sm p-6 space-y-4">
@@ -629,6 +738,19 @@ body {
       document.getElementById("moon-phase-label").textContent = moonPhaseName(phase) + " tonight";
     }
 
+    // --- TAB NAVIGATION (Today / History / Astro) ---
+    // Cheap show/hide of pre-rendered panels — no route library, no
+    // re-fetching, nothing that would tax an older phone.
+    function showTab(name) {
+      document.querySelectorAll(".tab-panel").forEach((panel) => {
+        panel.classList.toggle("active", panel.id === `panel-${name}`);
+      });
+      document.querySelectorAll(".tab-btn").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.tab === name);
+      });
+      window.scrollTo({ top: 0 });
+    }
+
     // --- MAIN APP LOGIC ---
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
@@ -668,6 +790,7 @@ body {
       dateInput.addEventListener("change", loadEntryForDate);
       document.getElementById("card-select").addEventListener("change", handleCardSelect);
 
+      showTab("today");
       loadEntryForDate();
       renderHistory();
     });
@@ -725,7 +848,7 @@ body {
       const cardObj = RIDER_WAITE_DECK.find(c => c.name === selectedName);
       
       document.getElementById("reading-display-container").classList.remove("hidden");
-      document.getElementById("card-image").src = cardObj.img;
+      revealCardImage(cardObj.img);
       document.getElementById("card-title").innerText = cardObj.name;
       document.getElementById("ai-analysis-text").innerText = "";
       document.getElementById("ai-loading").classList.remove("hidden");
@@ -807,6 +930,36 @@ body {
       }
     }
 
+    // Shows a shimmering placeholder in place of the card image until the
+    // (often remote, sometimes slow) Wikimedia artwork actually loads, then
+    // swaps it in with a brief reveal animation instead of a jarring pop-in.
+    // Pure CSS animation — negligible cost even on an older phone.
+    function revealCardImage(src) {
+      const imgEl = document.getElementById("card-image");
+      const skeletonEl = document.getElementById("card-skeleton");
+
+      imgEl.classList.remove("card-reveal");
+      imgEl.style.visibility = "hidden";
+      skeletonEl.classList.remove("hidden");
+
+      const finish = () => {
+        skeletonEl.classList.add("hidden");
+        imgEl.style.visibility = "visible";
+        // Restart the animation even if the same card is redrawn.
+        void imgEl.offsetWidth;
+        imgEl.classList.add("card-reveal");
+      };
+
+      if (imgEl.src === src && imgEl.complete) {
+        finish();
+        return;
+      }
+
+      imgEl.onload = finish;
+      imgEl.onerror = finish;
+      imgEl.src = src;
+    }
+
     function loadEntryForDate() {
       const selectedDate = document.getElementById("entry-date").value;
       const entry = journalData[selectedDate];
@@ -819,7 +972,7 @@ body {
 
       if (entry) {
         selectEl.value = entry.card.name;
-        imgEl.src = entry.card.img;
+        revealCardImage(entry.card.img);
         titleEl.innerText = entry.card.name;
         analysisText.innerText = entry.analysis;
         displayContainer.classList.remove("hidden");
