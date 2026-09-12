@@ -322,6 +322,1740 @@ select.app-field {
           <p id="moon-phase-label" class="text-xs app-subtle font-medium">&nbsp;</p>
         </div>
       </div>
+      <div class="flex items-center gap-2 flex-wrap justify-end">
+        <button onclick="toggleNatalModal()" class="px-3 py-1.5 app-btn-ghost text-xs font-semibold rounded-lg flex items-center gap-1.5">
+          <svg class="icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>
+          Chart
+        </button>
+        <button onclick="toggleKeyModal()" class="px-3 py-1.5 app-btn-ghost text-xs font-semibold rounded-lg flex items-center gap-1.5">
+          <svg class="icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="16" r="3.5"/><path d="M10.5 13.5L20 4"/><path d="M16.5 7.5l3 3"/><path d="M14 10l2 2"/></svg>
+          Key
+        </button>
+        <button onclick="openSecurityModal()" class="px-3 py-1.5 app-btn-ghost text-xs font-semibold rounded-lg flex items-center gap-1.5">
+          <svg class="icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          <span id="lock-btn-label">Lock</span>
+        </button>
+        <button onclick="openAppInfoModal()" aria-label="App info" class="p-2 app-btn-ghost rounded-lg flex items-center justify-center">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="16" x2="12" y2="11"/><circle cx="12" cy="8" r="0.6" fill="currentColor" stroke="none"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-md mx-auto px-4 pt-4 pb-6">
+
+    <section id="panel-today" class="tab-panel active app-container">
+      <div class="app-block">
+        <h2 class="kicker mb-4">Today's Draw</h2>
+
+        <div class="flex justify-between items-center mb-5">
+          <label for="entry-date" class="text-sm font-medium app-subtle">Date</label>
+          <input type="date" id="entry-date" class="app-field rounded-lg px-3 py-1.5 text-sm">
+        </div>
+
+        <div class="mb-2">
+          <label for="card-select" class="block text-sm font-medium app-subtle mb-2">Card (78-card deck)</label>
+          <select id="card-select" class="w-full app-field rounded-lg px-3 py-2.5 text-sm">
+            <option value="">Select a Rider-Waite card…</option>
+          </select>
+        </div>
+
+        <div id="reading-display-container" class="hidden mt-6 pt-6" style="border-top: 1px solid var(--border-softer);">
+
+          <div class="flex flex-col items-center justify-center p-4 app-panel rounded-lg">
+            <div id="card-image-wrap" style="position:relative;">
+              <div id="card-skeleton" class="card-skeleton hidden"></div>
+              <img id="card-image" src="" alt="Tarot Card Illustration" class="h-56 rounded object-contain mb-2">
+            </div>
+            <h3 id="card-title" class="text-sm font-serif font-bold app-heading"></h3>
+          </div>
+
+          <div id="ai-analysis-container" class="mt-5">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-medium app-subtle">Daily Reading</span>
+              <span id="ai-status-badge" class="text-[10px] app-badge px-2 py-0.5 rounded-md font-semibold">Saved Reading</span>
+            </div>
+            <div id="ai-loading" class="hidden py-6 text-center text-xs app-subtle italic">
+              Generating reading via Gemini 3.5 Flash-Lite…
+            </div>
+            <div id="ai-analysis-text" class="text-sm leading-relaxed app-body-text font-serif app-panel p-4 rounded-lg whitespace-pre-line space-y-2"></div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <section id="panel-history" class="tab-panel app-container">
+      <div class="app-block">
+        <div class="flex justify-between items-start mb-4 gap-2">
+          <h2 class="kicker">History</h2>
+          <div class="flex gap-2">
+            <button id="export-text-btn" onclick="exportAsText()" title="Copy or share as text" class="text-xs px-2.5 py-1.5 app-btn-ghost rounded-lg font-medium flex items-center gap-1.5">
+              <svg class="icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="M8 8l4-4 4 4"/><path d="M4 14v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5"/></svg>
+              Share
+            </button>
+            <button id="export-pdf-btn" onclick="exportToPDF()" title="Export as PDF" class="text-xs px-2.5 py-1.5 app-btn-ghost rounded-lg font-medium flex items-center gap-1.5">
+              <svg class="icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg>
+              PDF
+            </button>
+          </div>
+        </div>
+        <div id="history-list" class="pr-1">
+          </div>
+      </div>
+    </section>
+
+    <section id="panel-astro" class="tab-panel app-container">
+      <div class="app-block">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="kicker">Astrology</h2>
+          <span class="text-[10px] app-badge px-2 py-0.5 rounded-md font-semibold">Chart linked</span>
+        </div>
+
+        <div class="flex flex-col items-center justify-center p-4 chart-panel rounded-lg">
+          <svg viewBox="0 0 200 200" style="width:9rem;height:9rem;">
+            <circle cx="100" cy="100" r="90" fill="none" stroke="#c4b5fd" stroke-width="2" opacity="0.4"/>
+            <circle cx="100" cy="100" r="65" fill="none" stroke="#a78bfa" stroke-width="1.5" opacity="0.6"/>
+            <circle cx="100" cy="100" r="40" fill="none" stroke="#ddd6fe" stroke-width="1" opacity="0.3"/>
+            <line x1="10" y1="100" x2="190" y2="100" stroke="#c4b5fd" stroke-width="1" opacity="0.5"/>
+            <line x1="100" y1="10" x2="100" y2="190" stroke="#c4b5fd" stroke-width="1" opacity="0.5"/>
+            <line x1="36" y1="36" x2="164" y2="164" stroke="#c4b5fd" stroke-width="0.7" opacity="0.3"/>
+            <line x1="164" y1="36" x2="36" y2="164" stroke="#c4b5fd" stroke-width="0.7" opacity="0.3"/>
+            <circle cx="50" cy="60" r="4" fill="#fcd34d"/>
+            <circle cx="140" cy="70" r="4" fill="#f3e8ff"/>
+            <circle cx="80" cy="145" r="3" fill="#f472b6"/>
+          </svg>
+          <p class="text-[11px] text-center app-subtle font-medium mt-2">Sun: Scorpio · Moon: Cancer · ASC: Gemini</p>
+        </div>
+
+        <div class="flex items-center justify-between gap-2 mt-4">
+          <label for="astro-window" class="text-xs font-medium app-subtle">Lookback</label>
+          <select id="astro-window" class="app-field rounded-lg px-2 py-1 text-xs">
+            <option value="7">Last 7 draws</option>
+            <option value="30" selected>Last 30 draws</option>
+            <option value="90">Last 90 draws</option>
+            <option value="9999">All draws</option>
+          </select>
+        </div>
+
+        <button onclick="generateAIAstroSynergy()" class="w-full py-3 mt-3 app-btn-primary font-semibold text-sm rounded-lg flex items-center justify-center gap-2">
+          <svg class="icon btn-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8L12 2z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15z"/></svg>
+          Analyze card trends
+        </button>
+
+        <div id="astro-loading" class="hidden text-center text-xs app-subtle italic py-2 mt-2">
+          Gemini 3.5 Flash is mapping your stored history…
+        </div>
+
+        <div id="astro-synergy-result" class="hidden text-xs leading-relaxed app-body-text font-serif italic app-panel p-4 rounded-lg mt-3 whitespace-pre-line">
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <nav class="tab-bar">
+    <button class="tab-btn active" data-tab="today" onclick="showTab('today')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Today
+    </button>
+    <button class="tab-btn" data-tab="history" onclick="showTab('history')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+      History
+    </button>
+    <button class="tab-btn" data-tab="astro" onclick="showTab('astro')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18 9 9 0 0 1 0-18"/></svg>
+      Astro
+    </button>
+  </nav>
+
+  <div id="key-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden p-4">
+    <div class="app-container w-full max-w-sm p-6 space-y-4">
+      <h3 class="text-base font-serif font-bold app-heading">Gemini API key setup</h3>
+      <p class="text-xs app-subtle leading-relaxed">
+        Paste your Google AI Studio API key below. It's stored only on this device.
+      </p>
+      <input type="password" id="gemini-key-input" placeholder="AIzaSy..." class="w-full app-field rounded-lg px-3 py-2 text-xs">
+      <div class="flex gap-2">
+        <button onclick="saveApiKey()" class="flex-1 py-2 app-btn-primary text-xs font-semibold rounded-lg">Save key</button>
+        <button onclick="toggleKeyModal()" class="px-4 py-2 app-btn-ghost text-xs font-semibold rounded-lg">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="natal-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden p-4">
+    <div class="app-container w-full max-w-sm p-6 space-y-4">
+      <h3 class="text-base font-serif font-bold app-heading">Natal chart setup</h3>
+      <p class="text-xs app-subtle leading-relaxed">
+        Paste your natal chart details below. It's stored only on this device and used to personalize the Astrological Synergy analysis.
+      </p>
+      <textarea id="natal-chart-input" rows="10" placeholder="Sun: 22°17' Scorpio&#10;Moon: 29°36' Cancer&#10;Ascendant: Gemini&#10;..." class="w-full app-field rounded-lg px-3 py-2 text-xs font-mono"></textarea>
+      <div class="flex gap-2">
+        <button onclick="saveNatalChart()" class="flex-1 py-2 app-btn-primary text-xs font-semibold rounded-lg">Save chart</button>
+        <button onclick="toggleNatalModal()" class="px-4 py-2 app-btn-ghost text-xs font-semibold rounded-lg">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="security-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden p-4">
+    <div class="app-container w-full max-w-sm p-6 space-y-4">
+      <h3 class="text-base font-serif font-bold app-heading">Passphrase lock</h3>
+      <div id="security-modal-body" class="space-y-3"></div>
+      <button onclick="toggleSecurityModal()" class="w-full px-4 py-2 app-btn-ghost text-xs font-semibold rounded-lg">Close</button>
+    </div>
+  </div>
+
+  <div id="app-info-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden p-4">
+    <div class="app-container w-full max-w-sm p-6 space-y-4">
+      <h3 class="text-base font-serif font-bold app-heading">App info</h3>
+      <p class="text-xs app-subtle leading-relaxed">
+        Currently loaded build: <strong id="app-build-display">—</strong>
+      </p>
+      <p class="text-xs app-subtle leading-relaxed">
+        If the app seems stuck on an old version after a GitHub update, force it to drop its cached copy and reload fresh.
+      </p>
+      <button onclick="forceAppUpdate()" class="w-full py-2 app-btn-primary text-xs font-semibold rounded-lg">Force update</button>
+      <button onclick="toggleAppInfoModal()" class="w-full px-4 py-2 app-btn-ghost text-xs font-semibold rounded-lg">Close</button>
+    </div>
+  </div>
+
+  <script>
+    const RIDER_WAITE_DECK = [
+      { name: "The Fool", img: "https://upload.wikimedia.org/wikipedia/commons/9/90/RWS_Tarot_00_Fool.jpg", arcana: "Major" },
+      { name: "The Magician", img: "https://upload.wikimedia.org/wikipedia/commons/d/de/RWS_Tarot_01_Magician.jpg", arcana: "Major" },
+      { name: "The High Priestess", img: "https://upload.wikimedia.org/wikipedia/commons/8/88/RWS_Tarot_02_High_Priestess.jpg", arcana: "Major" },
+      { name: "The Empress", img: "https://upload.wikimedia.org/wikipedia/commons/d/d2/RWS_Tarot_03_Empress.jpg", arcana: "Major" },
+      { name: "The Emperor", img: "https://upload.wikimedia.org/wikipedia/commons/c/c3/RWS_Tarot_04_Emperor.jpg", arcana: "Major" },
+      { name: "The Hierophant", img: "https://upload.wikimedia.org/wikipedia/commons/8/8d/RWS_Tarot_05_Hierophant.jpg", arcana: "Major" },
+      { name: "The Lovers", img: "https://upload.wikimedia.org/wikipedia/commons/3/3a/TheLovers.jpg", arcana: "Major" },
+      { name: "The Chariot", img: "https://upload.wikimedia.org/wikipedia/commons/9/9b/RWS_Tarot_07_Chariot.jpg", arcana: "Major" },
+      { name: "Strength", img: "https://upload.wikimedia.org/wikipedia/commons/f/f5/RWS_Tarot_08_Strength.jpg", arcana: "Major" },
+      { name: "The Hermit", img: "https://upload.wikimedia.org/wikipedia/commons/4/4d/RWS_Tarot_09_Hermit.jpg", arcana: "Major" },
+      { name: "Wheel of Fortune", img: "https://upload.wikimedia.org/wikipedia/commons/3/3c/RWS_Tarot_10_Wheel_of_Fortune.jpg", arcana: "Major" },
+      { name: "Justice", img: "https://upload.wikimedia.org/wikipedia/commons/e/e0/RWS_Tarot_11_Justice.jpg", arcana: "Major" },
+      { name: "The Hanged Man", img: "https://upload.wikimedia.org/wikipedia/commons/2/2b/RWS_Tarot_12_Hanged_Man.jpg", arcana: "Major" },
+      { name: "Death", img: "https://upload.wikimedia.org/wikipedia/commons/d/d7/RWS_Tarot_13_Death.jpg", arcana: "Major" },
+      { name: "Temperance", img: "https://upload.wikimedia.org/wikipedia/commons/f/f8/RWS_Tarot_14_Temperance.jpg", arcana: "Major" },
+      { name: "The Devil", img: "https://upload.wikimedia.org/wikipedia/commons/5/55/RWS_Tarot_15_Devil.jpg", arcana: "Major" },
+      { name: "The Tower", img: "https://upload.wikimedia.org/wikipedia/commons/5/53/RWS_Tarot_16_Tower.jpg", arcana: "Major" },
+      { name: "The Star", img: "https://upload.wikimedia.org/wikipedia/commons/d/db/RWS_Tarot_17_Star.jpg", arcana: "Major" },
+      { name: "The Moon", img: "https://upload.wikimedia.org/wikipedia/commons/7/7f/RWS_Tarot_18_Moon.jpg", arcana: "Major" },
+      { name: "The Sun", img: "https://upload.wikimedia.org/wikipedia/commons/1/17/RWS_Tarot_19_Sun.jpg", arcana: "Major" },
+      { name: "Judgement", img: "https://upload.wikimedia.org/wikipedia/commons/d/dd/RWS_Tarot_20_Judgement.jpg", arcana: "Major" },
+      { name: "The World", img: "https://upload.wikimedia.org/wikipedia/commons/ff/ff/RWS_Tarot_21_World.jpg", arcana: "Major" },
+      { name: "Ace of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/1/11/Wands01.jpg", arcana: "Wands" },
+      { name: "Two of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/0/0f/Wands02.jpg", arcana: "Wands" },
+      { name: "Three of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/ff/ff/Wands03.jpg", arcana: "Wands" },
+      { name: "Four of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/a/a4/Wands04.jpg", arcana: "Wands" },
+      { name: "Five of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/9/9d/Wands05.jpg", arcana: "Wands" },
+      { name: "Six of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/3/3b/Wands06.jpg", arcana: "Wands" },
+      { name: "Seven of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/e/e4/Wands07.jpg", arcana: "Wands" },
+      { name: "Eight of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/6/6b/Wands08.jpg", arcana: "Wands" },
+      { name: "Nine of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/4/4d/Wands09.jpg", arcana: "Wands" },
+      { name: "Ten of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/0/0b/Wands10.jpg", arcana: "Wands" },
+      { name: "Page of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/6/6a/Wands11.jpg", arcana: "Wands" },
+      { name: "Knight of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/1/16/Wands12.jpg", arcana: "Wands" },
+      { name: "Queen of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/0/0d/Wands13.jpg", arcana: "Wands" },
+      { name: "King of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/ce/ce/Wands14.jpg", arcana: "Wands" },
+      { name: "Ace of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/3/36/Cups01.jpg", arcana: "Cups" },
+      { name: "Two of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/f/f8/Cups02.jpg", arcana: "Cups" },
+      { name: "Three of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/7/7a/Cups03.jpg", arcana: "Cups" },
+      { name: "Four of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/3/35/Cups04.jpg", arcana: "Cups" },
+      { name: "Five of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/d/d7/Cups05.jpg", arcana: "Cups" },
+      { name: "Six of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/1/17/Cups06.jpg", arcana: "Cups" },
+      { name: "Seven of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/a/ae/Cups07.jpg", arcana: "Cups" },
+      { name: "Eight of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/6/60/Cups08.jpg", arcana: "Cups" },
+      { name: "Nine of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/2/24/Cups09.jpg", arcana: "Cups" },
+      { name: "Ten of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/8/84/Cups10.jpg", arcana: "Cups" },
+      { name: "Page of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/a/ad/Cups11.jpg", arcana: "Cups" },
+      { name: "Knight of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/fa/fa/Cups12.jpg", arcana: "Cups" },
+      { name: "Queen of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/6/62/Cups13.jpg", arcana: "Cups" },
+      { name: "King of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/0/04/Cups14.jpg", arcana: "Cups" },
+      { name: "Ace of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/1/1a/Swords01.jpg", arcana: "Swords" },
+      { name: "Two of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/9/9e/Swords02.jpg", arcana: "Swords" },
+      { name: "Three of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/0/02/Swords03.jpg", arcana: "Swords" },
+      { name: "Four of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/b/bf/Swords04.jpg", arcana: "Swords" },
+      { name: "Five of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/2/23/Swords05.jpg", arcana: "Swords" },
+      { name: "Six of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/2/29/Swords06.jpg", arcana: "Swords" },
+      { name: "Seven of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/3/34/Swords07.jpg", arcana: "Swords" },
+      { name: "Eight of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/a/a7/Swords08.jpg", arcana: "Swords" },
+      { name: "Nine of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/2/2f/Swords09.jpg", arcana: "Swords" },
+      { name: "Ten of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/d/d4/Swords10.jpg", arcana: "Swords" },
+      { name: "Page of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/4/4c/Swords11.jpg", arcana: "Swords" },
+      { name: "Knight of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/b/b0/Swords12.jpg", arcana: "Swords" },
+      { name: "Queen of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/d/d4/Swords13.jpg", arcana: "Swords" },
+      { name: "King of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/3/33/Swords14.jpg", arcana: "Swords" },
+      { name: "Ace of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/f/fd/Pents01.jpg", arcana: "Pentacles" },
+      { name: "Two of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/9/9f/Pents02.jpg", arcana: "Pentacles" },
+      { name: "Three of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/4/42/Pents03.jpg", arcana: "Pentacles" },
+      { name: "Four of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/3/3b/Pents04.jpg", arcana: "Pentacles" },
+      { name: "Five of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/9/96/Pents05.jpg", arcana: "Pentacles" },
+      { name: "Six of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/a/a6/Pents06.jpg", arcana: "Pentacles" },
+      { name: "Seven of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/6/6a/Pents07.jpg", arcana: "Pentacles" },
+      { name: "Eight of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/4/49/Pents08.jpg", arcana: "Pentacles" },
+      { name: "Nine of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/f/f0/Pents09.jpg", arcana: "Pentacles" },
+      { name: "Ten of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/4/42/Pents10.jpg", arcana: "Pentacles" },
+      { name: "Page of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/e/ec/Pents11.jpg", arcana: "Pentacles" },
+      { name: "Knight of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/d/d5/Pents12.jpg", arcana: "Pentacles" },
+      { name: "Queen of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/8/88/Pents13.jpg", arcana: "Pentacles" },
+      { name: "King of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/1/1c/Pents14.jpg", arcana: "Pentacles" }
+    ];
+
+    // --- INDEXEDDB STORAGE SYSTEM FOR IOS SAFARI HOME SCREEN APPS ---
+    const DB_NAME = "CelestialTarotDB";
+    const HISTORY_STORE = "card_history";
+    const SETTINGS_STORE = "user_settings";
+    let db = null;
+    let journalData = {};
+    let savedApiKeyVal = "";
+    let savedNatalChartVal = "";
+    // Decided once at startup and used consistently everywhere, so reads and
+    // writes never end up split across IndexedDB and localStorage.
+    let storageMode = "indexeddb";
+
+    // Centralized so a future model rename/retirement is a one-line fix.
+    const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
+    const GEMINI_MODEL_DAILY = "gemini-3.5-flash-lite"; // cheap, used every day
+    const GEMINI_MODEL_TREND = "gemini-3.5-flash";      // used occasionally
+
+    // Bump this string on every deploy — checked on demand via the small
+    // "App info" (ⓘ) header button rather than shown at all times, so it
+    // can't affect the header's layout. Keep in step with sw.js's
+    // SHELL_CACHE so a bumped build always means a bumped cache too.
+    const APP_BUILD = "v14";
+
+    // --- OPTIONAL PASSPHRASE LOCK FOR THE STORED KEY & NATAL CHART ---
+    // Off by default (fully backward compatible). When enabled, the API key
+    // and natal chart are encrypted at rest with a passphrase that is never
+    // itself stored — only held in memory for the current session, so the
+    // app "re-locks" on every fresh launch until unlocked again.
+    let vaultEnabled = localStorage.getItem("vault_enabled") === "1";
+    let vaultPassphrase = null;
+
+    function initDB() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, 2);
+
+        request.onupgradeneeded = (e) => {
+          const dbInstance = e.target.result;
+          if (!dbInstance.objectStoreNames.contains(HISTORY_STORE)) {
+            dbInstance.createObjectStore(HISTORY_STORE, { keyPath: "date" });
+          }
+          if (!dbInstance.objectStoreNames.contains(SETTINGS_STORE)) {
+            dbInstance.createObjectStore(SETTINGS_STORE, { keyPath: "key" });
+          }
+        };
+
+        request.onsuccess = (e) => {
+          db = e.target.result;
+          resolve(db);
+        };
+
+        request.onerror = (e) => {
+          console.error("IndexedDB error:", e.target.error);
+          reject(e.target.error);
+        };
+      });
+    }
+
+    // --- CRYPTO HELPERS FOR THE OPTIONAL PASSPHRASE LOCK ---
+    // AES-GCM with a PBKDF2-derived key. The passphrase itself is never
+    // stored anywhere — only the salt/iv/ciphertext are persisted.
+    function bufToBase64(buf) {
+      return btoa(String.fromCharCode(...new Uint8Array(buf)));
+    }
+    function base64ToBuf(b64) {
+      return Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    }
+
+    async function deriveVaultKey(passphrase, salt) {
+      const enc = new TextEncoder();
+      const baseKey = await crypto.subtle.importKey(
+        "raw", enc.encode(passphrase), "PBKDF2", false, ["deriveKey"]
+      );
+      return crypto.subtle.deriveKey(
+        { name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" },
+        baseKey,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["encrypt", "decrypt"]
+      );
+    }
+
+    async function encryptText(plainText, passphrase) {
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const key = await deriveVaultKey(passphrase, salt);
+      const cipherBuf = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv }, key, new TextEncoder().encode(plainText)
+      );
+      return `enc:v1:${bufToBase64(salt)}:${bufToBase64(iv)}:${bufToBase64(cipherBuf)}`;
+    }
+
+    async function decryptText(encoded, passphrase) {
+      const [, , saltB64, ivB64, cipherB64] = encoded.split(":");
+      const salt = base64ToBuf(saltB64);
+      const iv = base64ToBuf(ivB64);
+      const key = await deriveVaultKey(passphrase, salt);
+      const plainBuf = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv }, key, base64ToBuf(cipherB64)
+      );
+      return new TextDecoder().decode(plainBuf);
+    }
+
+    function isEncryptedValue(v) {
+      return typeof v === "string" && v.startsWith("enc:v1:");
+    }
+
+    // Reads one raw settings value regardless of storage mode, without
+    // touching the in-memory saved* variables — used only during unlock.
+    function getRawSetting(key) {
+      if (storageMode === "localstorage") {
+        return Promise.resolve(localStorage.getItem(key) || "");
+      }
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(SETTINGS_STORE, "readonly");
+        const req = tx.objectStore(SETTINGS_STORE).get(key);
+        req.onsuccess = () => resolve(req.result ? req.result.value : "");
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    // --- SHARED TEXT-RENDERING HELPERS ---
+    // Escapes the AI's raw text first (so nothing it returns can inject HTML),
+    // then re-introduces just the **bold** markers as real <strong> tags, so
+    // the "**Heading:**" sections in the prompts actually render as headings
+    // instead of showing literal asterisks.
+    function escapeHtml(str) {
+      const div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+    function formatAIText(raw) {
+      if (!raw) return "";
+      return escapeHtml(raw).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    }
+
+    // --- SHARED GEMINI API CALLER ---
+    // Used by both the daily reading and the astro synergy analysis, so
+    // fetch/timeout/error handling only needs to live in one place.
+    async function callGeminiAPI(model, promptText, apiKey, timeoutMs = 20000) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const res = await fetch(`${GEMINI_API_BASE}/${model}:generateContent`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": apiKey
+          },
+          body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: promptText }] }] }),
+          signal: controller.signal
+        });
+        const data = await res.json();
+        if (data.error) {
+          return { error: `Gemini API Error (${data.error.code}): ${data.error.message}` };
+        }
+        const text = data.candidates && data.candidates[0] && data.candidates[0].content
+          && data.candidates[0].content.parts && data.candidates[0].content.parts[0]
+          && data.candidates[0].content.parts[0].text;
+        if (!text) {
+          return { error: "Gemini returned an empty response." };
+        }
+        return { text };
+      } catch (err) {
+        if (err.name === "AbortError") {
+          return { error: "Request timed out contacting Gemini API. Please try again." };
+        }
+        console.error(err);
+        return { error: "Network error attempting to contact Gemini API." };
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+
+    // Applies whatever was read from storage (localStorage or IndexedDB) to
+    // the in-memory state and the Key/Chart inputs — detecting encrypted
+    // values and, if the vault is locked (enabled but not yet unlocked this
+    // session), keeping the fields blank and disabled instead of showing
+    // ciphertext or leaking data.
+    function applyLoadedSecrets(rawKey, rawChart) {
+      const keyInput = document.getElementById("gemini-key-input");
+      const chartInput = document.getElementById("natal-chart-input");
+      const locked = vaultEnabled && !vaultPassphrase && (isEncryptedValue(rawKey) || isEncryptedValue(rawChart));
+
+      if (locked) {
+        savedApiKeyVal = "";
+        savedNatalChartVal = "";
+        keyInput.value = "";
+        keyInput.placeholder = "🔒 Locked — tap Lock above to unlock";
+        keyInput.disabled = true;
+        chartInput.value = "";
+        chartInput.placeholder = "🔒 Locked — tap Lock above to unlock";
+        chartInput.disabled = true;
+      } else {
+        savedApiKeyVal = isEncryptedValue(rawKey) ? "" : rawKey;
+        savedNatalChartVal = isEncryptedValue(rawChart) ? "" : rawChart;
+        keyInput.value = savedApiKeyVal;
+        keyInput.disabled = false;
+        chartInput.value = savedNatalChartVal;
+        chartInput.disabled = false;
+      }
+      updateLockButtonLabel();
+    }
+
+    function updateLockButtonLabel() {
+      const label = document.getElementById("lock-btn-label");
+      if (!label) return;
+      if (!vaultEnabled) label.textContent = "Lock";
+      else if (vaultPassphrase) label.textContent = "Unlocked";
+      else label.textContent = "Locked";
+    }
+
+    function loadAllFromDB() {
+      if (storageMode === "localstorage") {
+        journalData = JSON.parse(localStorage.getItem("tarot_journal_db") || "{}");
+        const rawKey = localStorage.getItem("gemini_api_key") || "";
+        const rawChart = localStorage.getItem("natal_chart") || "";
+        applyLoadedSecrets(rawKey, rawChart);
+        return Promise.resolve();
+      }
+
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([HISTORY_STORE, SETTINGS_STORE], "readonly");
+        let rawKey = "", rawChart = "";
+
+        const historyStore = tx.objectStore(HISTORY_STORE);
+        const historyReq = historyStore.getAll();
+        historyReq.onsuccess = () => {
+          journalData = {};
+          historyReq.result.forEach(item => {
+            journalData[item.date] = item.data;
+          });
+        };
+
+        const settingsStore = tx.objectStore(SETTINGS_STORE);
+        const keyReq = settingsStore.get("gemini_api_key");
+        keyReq.onsuccess = () => {
+          if (keyReq.result) rawKey = keyReq.result.value;
+        };
+
+        const natalReq = settingsStore.get("natal_chart");
+        natalReq.onsuccess = () => {
+          if (natalReq.result) rawChart = natalReq.result.value;
+        };
+
+        tx.oncomplete = () => {
+          applyLoadedSecrets(rawKey, rawChart);
+          resolve();
+        };
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error);
+      });
+    }
+
+    function saveCardToDB(dateStr, entryData) {
+      if (storageMode === "localstorage") {
+        try {
+          localStorage.setItem("tarot_journal_db", JSON.stringify(journalData));
+          return Promise.resolve();
+        } catch (err) {
+          return Promise.reject(err);
+        }
+      }
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(HISTORY_STORE, "readwrite");
+        tx.objectStore(HISTORY_STORE).put({ date: dateStr, data: entryData });
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error);
+      });
+    }
+
+    function deleteCardFromDB(dateStr) {
+      if (storageMode === "localstorage") {
+        try {
+          localStorage.setItem("tarot_journal_db", JSON.stringify(journalData));
+          return Promise.resolve();
+        } catch (err) {
+          return Promise.reject(err);
+        }
+      }
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(HISTORY_STORE, "readwrite");
+        tx.objectStore(HISTORY_STORE).delete(dateStr);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error);
+      });
+    }
+
+    async function writeSettingRaw(key, rawValue) {
+      if (storageMode === "localstorage") {
+        localStorage.setItem(key, rawValue);
+        return;
+      }
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(SETTINGS_STORE, "readwrite");
+        tx.objectStore(SETTINGS_STORE).put({ key, value: rawValue });
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error);
+      });
+    }
+
+    async function saveKeyToDB(keyVal) {
+      savedApiKeyVal = keyVal;
+      const stored = (vaultEnabled && vaultPassphrase) ? await encryptText(keyVal, vaultPassphrase) : keyVal;
+      return writeSettingRaw("gemini_api_key", stored);
+    }
+
+    async function saveNatalChartToDB(chartVal) {
+      savedNatalChartVal = chartVal;
+      const stored = (vaultEnabled && vaultPassphrase) ? await encryptText(chartVal, vaultPassphrase) : chartVal;
+      return writeSettingRaw("natal_chart", stored);
+    }
+
+    // Lightweight, non-blocking status message — replaces alert() so a daily-use
+    // app doesn't interrupt the user with a modal dialog on every save.
+    let toastTimeout = null;
+    function showToast(message, isError = false) {
+      let toast = document.getElementById("app-toast");
+      if (!toast) {
+        toast = document.createElement("div");
+        toast.id = "app-toast";
+        Object.assign(toast.style, {
+          position: "fixed",
+          left: "50%",
+          bottom: "calc(20px + env(safe-area-inset-bottom))",
+          transform: "translateX(-50%)",
+          maxWidth: "90%",
+          padding: "10px 18px",
+          borderRadius: "8px",
+          fontSize: "13px",
+          fontWeight: "600",
+          color: "#fff",
+          zIndex: "9999",
+          border: "1px solid rgba(255,255,255,0.15)",
+          textAlign: "center"
+        });
+        document.body.appendChild(toast);
+      }
+      toast.style.backgroundColor = isError ? "#7f1d1d" : "#3b0764";
+      toast.textContent = message;
+      toast.style.display = "block";
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => { toast.style.display = "none"; }, 2800);
+    }
+
+    // A real, computed moon phase for today — grounds the header in the app's
+    // actual subject matter instead of a generic decorative icon.
+    function getMoonPhase(date) {
+      const knownNewMoon = Date.UTC(2000, 0, 6, 18, 14);
+      const synodicMonth = 29.53058867;
+      const diffDays = (date.getTime() - knownNewMoon) / 86400000;
+      const phase = ((diffDays % synodicMonth) + synodicMonth) % synodicMonth / synodicMonth;
+      return phase; // 0 = new moon, 0.5 = full moon
+    }
+
+    function moonPhaseName(phase) {
+      if (phase < 0.03 || phase > 0.97) return "New Moon";
+      if (phase < 0.22) return "Waxing Crescent";
+      if (phase < 0.28) return "First Quarter";
+      if (phase < 0.47) return "Waxing Gibbous";
+      if (phase < 0.53) return "Full Moon";
+      if (phase < 0.72) return "Waning Gibbous";
+      if (phase < 0.78) return "Last Quarter";
+      return "Waning Crescent";
+    }
+
+    function renderMoonGlyph(phase) {
+      const svg = document.getElementById("moon-glyph");
+      const r = 13, cx = 16, cy = 16;
+      // Fraction of the disc illuminated (0 = new moon, 1 = full moon), then
+      // slide a background-colored circle across the lit disc so the visible
+      // sliver matches that fraction.
+      const illuminated = (1 - Math.cos(phase * 2 * Math.PI)) / 2;
+      const shift = illuminated * r * 2.3;
+      svg.innerHTML = `
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="#f0c869"/>
+        <circle cx="${cx + shift}" cy="${cy}" r="${r}" fill="#1b1638"/>
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(196,181,253,0.45)" stroke-width="1"/>
+      `;
+      document.getElementById("moon-phase-label").textContent = moonPhaseName(phase) + " tonight";
+    }
+
+    // --- TAB NAVIGATION (Today / History / Astro) ---
+    // Cheap show/hide of pre-rendered panels — no route library, no
+    // re-fetching, nothing that would tax an older phone.
+    function showTab(name) {
+      document.querySelectorAll(".tab-panel").forEach((panel) => {
+        panel.classList.toggle("active", panel.id === `panel-${name}`);
+      });
+      document.querySelectorAll(".tab-btn").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.tab === name);
+      });
+      window.scrollTo({ top: 0 });
+    }
+
+    // --- MAIN APP LOGIC ---
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch((err) => {
+          console.warn("Service worker registration failed:", err);
+        });
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      const today = new Date().toISOString().split('T')[0];
+      const dateInput = document.getElementById("entry-date");
+      dateInput.value = today;
+
+      populateDropdown();
+      renderMoonGlyph(getMoonPhase(new Date()));
+
+      // Retrieve permanently stored history and key. If IndexedDB can't be
+      // opened (private browsing, storage pressure, etc.) fall back to
+      // localStorage — and stay there consistently for the rest of the
+      // session so reads and writes never split across the two stores.
+      try {
+        await initDB();
+        storageMode = "indexeddb";
+      } catch (err) {
+        console.warn("IndexedDB unavailable, falling back to localStorage:", err);
+        storageMode = "localstorage";
+      }
+
+      try {
+        await loadAllFromDB();
+      } catch (err) {
+        console.error("Failed to load saved history:", err);
+        showToast("Couldn't load your saved history.", true);
+      }
+
+      dateInput.addEventListener("change", loadEntryForDate);
+      document.getElementById("card-select").addEventListener("change", handleCardSelect);
+
+      showTab("today");
+      loadEntryForDate();
+      renderHistory();
+    });
+
+    function toggleKeyModal() {
+      document.getElementById("key-modal").classList.toggle("hidden");
+    }
+
+    function isVaultLockedNow() {
+      return vaultEnabled && !vaultPassphrase;
+    }
+
+    async function saveApiKey() {
+      if (isVaultLockedNow()) {
+        showToast("Unlock the vault first (tap Lock above).", true);
+        return;
+      }
+      const key = document.getElementById("gemini-key-input").value.trim();
+      try {
+        await saveKeyToDB(key);
+        toggleKeyModal();
+        showToast("API key saved.");
+      } catch (err) {
+        console.error("Failed to save API key:", err);
+        showToast("Couldn't save the API key — please try again.", true);
+      }
+    }
+
+    function toggleNatalModal() {
+      document.getElementById("natal-modal").classList.toggle("hidden");
+    }
+
+    async function saveNatalChart() {
+      if (isVaultLockedNow()) {
+        showToast("Unlock the vault first (tap Lock above).", true);
+        return;
+      }
+      const chart = document.getElementById("natal-chart-input").value.trim();
+      try {
+        await saveNatalChartToDB(chart);
+        toggleNatalModal();
+        showToast("Natal chart saved.");
+      } catch (err) {
+        console.error("Failed to save natal chart:", err);
+        showToast("Couldn't save the natal chart — please try again.", true);
+      }
+    }
+
+    function toggleSecurityModal() {
+      document.getElementById("security-modal").classList.toggle("hidden");
+    }
+
+    function openSecurityModal() {
+      renderSecurityModal();
+      document.getElementById("security-modal").classList.remove("hidden");
+    }
+
+    // Redraws the modal body for whichever of the three states applies:
+    // no lock set up, locked (needs unlocking this session), or unlocked.
+    function renderSecurityModal() {
+      const body = document.getElementById("security-modal-body");
+
+      if (!vaultEnabled) {
+        body.innerHTML = `
+          <p class="text-xs app-subtle leading-relaxed">
+            Encrypt your saved API key and natal chart with a passphrase. The passphrase itself is never stored — you'll need to re-enter it each time you reopen the app.
+          </p>
+          <input type="password" id="vault-passphrase-input" placeholder="New passphrase (min. 6 characters)" class="w-full app-field rounded-lg px-3 py-2 text-xs">
+          <input type="password" id="vault-passphrase-confirm" placeholder="Confirm passphrase" class="w-full app-field rounded-lg px-3 py-2 text-xs">
+          <button onclick="enableVaultLock()" class="w-full py-2 app-btn-primary text-xs font-semibold rounded-lg">Enable lock</button>
+        `;
+      } else if (!vaultPassphrase) {
+        body.innerHTML = `
+          <p class="text-xs app-subtle leading-relaxed">
+            🔒 Your key and chart are locked for this session. Enter your passphrase to unlock them.
+          </p>
+          <input type="password" id="vault-unlock-input" placeholder="Passphrase" class="w-full app-field rounded-lg px-3 py-2 text-xs">
+          <button onclick="unlockVaultSession()" class="w-full py-2 app-btn-primary text-xs font-semibold rounded-lg">Unlock</button>
+        `;
+      } else {
+        body.innerHTML = `
+          <p class="text-xs app-subtle leading-relaxed">
+            🔓 Unlocked for this session. It will re-lock the next time you close and reopen the app.
+          </p>
+          <button onclick="lockVaultSession()" class="w-full py-2 app-btn-ghost text-xs font-semibold rounded-lg">Lock now</button>
+          <button onclick="removeVaultLock()" class="w-full py-2 app-btn-ghost text-xs font-semibold rounded-lg" style="color:#7f1d1d;">Remove lock entirely</button>
+        `;
+      }
+    }
+
+    async function enableVaultLock() {
+      const p1 = document.getElementById("vault-passphrase-input").value;
+      const p2 = document.getElementById("vault-passphrase-confirm").value;
+      if (!p1 || p1.length < 6) {
+        showToast("Passphrase must be at least 6 characters.", true);
+        return;
+      }
+      if (p1 !== p2) {
+        showToast("Passphrases don't match.", true);
+        return;
+      }
+      try {
+        vaultPassphrase = p1;
+        vaultEnabled = true;
+        localStorage.setItem("vault_enabled", "1");
+        // Re-encrypt whatever is currently held in memory (plaintext) so it's
+        // protected at rest going forward.
+        if (savedApiKeyVal) await saveKeyToDB(savedApiKeyVal);
+        if (savedNatalChartVal) await saveNatalChartToDB(savedNatalChartVal);
+        updateLockButtonLabel();
+        renderSecurityModal();
+        showToast("Passphrase lock enabled.");
+      } catch (err) {
+        console.error("Failed to enable vault lock:", err);
+        showToast("Couldn't enable the lock — please try again.", true);
+      }
+    }
+
+    async function unlockVaultSession() {
+      const pass = document.getElementById("vault-unlock-input").value;
+      if (!pass) {
+        showToast("Enter your passphrase.", true);
+        return;
+      }
+      try {
+        const rawKey = await getRawSetting("gemini_api_key");
+        const rawChart = await getRawSetting("natal_chart");
+        const decryptedKey = isEncryptedValue(rawKey) ? await decryptText(rawKey, pass) : rawKey;
+        const decryptedChart = isEncryptedValue(rawChart) ? await decryptText(rawChart, pass) : rawChart;
+
+        vaultPassphrase = pass;
+        savedApiKeyVal = decryptedKey;
+        savedNatalChartVal = decryptedChart;
+
+        const keyInput = document.getElementById("gemini-key-input");
+        keyInput.value = decryptedKey;
+        keyInput.placeholder = "AIzaSy...";
+        keyInput.disabled = false;
+
+        const chartInput = document.getElementById("natal-chart-input");
+        chartInput.value = decryptedChart;
+        chartInput.placeholder = "Sun: 22°17' Scorpio…";
+        chartInput.disabled = false;
+
+        document.getElementById("vault-unlock-input").value = "";
+        updateLockButtonLabel();
+        renderSecurityModal();
+        showToast("Vault unlocked for this session.");
+      } catch (err) {
+        console.error("Failed to unlock vault:", err);
+        showToast("Wrong passphrase, or the data couldn't be decrypted.", true);
+      }
+    }
+
+    function lockVaultSession() {
+      vaultPassphrase = null;
+      applyLoadedSecrets("enc:v1:locked", "enc:v1:locked"); // force the locked UI state
+      renderSecurityModal();
+      showToast("Vault locked.");
+    }
+
+    async function removeVaultLock() {
+      try {
+        // Re-save the currently-decrypted values as plaintext, then turn the
+        // lock off entirely.
+        const keyVal = savedApiKeyVal;
+        const chartVal = savedNatalChartVal;
+        vaultEnabled = false;
+        vaultPassphrase = null;
+        localStorage.removeItem("vault_enabled");
+        if (keyVal) await writeSettingRaw("gemini_api_key", keyVal);
+        if (chartVal) await writeSettingRaw("natal_chart", chartVal);
+        updateLockButtonLabel();
+        renderSecurityModal();
+        showToast("Passphrase lock removed.");
+      } catch (err) {
+        console.error("Failed to remove vault lock:", err);
+        showToast("Couldn't remove the lock — please try again.", true);
+      }
+    }
+
+    function toggleAppInfoModal() {
+      document.getElementById("app-info-modal").classList.toggle("hidden");
+    }
+
+    function openAppInfoModal() {
+      document.getElementById("app-build-display").textContent = APP_BUILD;
+      document.getElementById("app-info-modal").classList.remove("hidden");
+    }
+
+    // Unregisters the service worker and clears every Cache Storage entry
+    // for this origin, then hard-reloads — the manual escape hatch for when
+    // a stale cached shell survives a normal close/reopen cycle on iOS.
+    // Does NOT touch IndexedDB/localStorage, so the saved key, chart, and
+    // journal are left untouched.
+    async function forceAppUpdate() {
+      try {
+        if ("serviceWorker" in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(r => r.unregister()));
+        }
+        if (window.caches) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map(k => caches.delete(k)));
+        }
+        showToast("Cleared cached files — reloading…");
+        setTimeout(() => window.location.reload(), 500);
+      } catch (err) {
+        console.error("Force update failed:", err);
+        showToast("Couldn't clear the cache — please try again.", true);
+      }
+    }
+
+
+    function populateDropdown() {
+      const selectEl = document.getElementById("card-select");
+      const categories = ["Major", "Wands", "Cups", "Swords", "Pentacles"];
+      categories.forEach(cat => {
+        const optgroup = document.createElement("optgroup");
+        optgroup.label = cat === "Major" ? "Major Arcana" : `Suit of ${cat}`;
+        RIDER_WAITE_DECK.filter(c => c.arcana === cat).forEach(card => {
+          const opt = document.createElement("option");
+          opt.value = card.name;
+          opt.textContent = card.name;
+          optgroup.appendChild(opt);
+        });
+        selectEl.appendChild(optgroup);
+      });
+    }
+
+    async function handleCardSelect() {
+      const selectedName = document.getElementById("card-select").value;
+      const selectedDate = document.getElementById("entry-date").value;
+
+      if (!selectedName) {
+        delete journalData[selectedDate];
+        try {
+          await deleteCardFromDB(selectedDate);
+        } catch (err) {
+          console.error("Failed to delete entry:", err);
+          showToast("Couldn't remove that entry — please try again.", true);
+        }
+        loadEntryForDate();
+        renderHistory();
+        return;
+      }
+
+      const cardObj = RIDER_WAITE_DECK.find(c => c.name === selectedName);
+      
+      document.getElementById("reading-display-container").classList.remove("hidden");
+      revealCardImage(cardObj.img);
+      document.getElementById("card-title").innerText = cardObj.name;
+      document.getElementById("ai-analysis-text").innerText = "";
+      document.getElementById("ai-loading").classList.remove("hidden");
+
+      const aiAnalysis = await fetchGeminiCardReading(selectedName);
+
+      const entryData = {
+        card: cardObj,
+        analysis: aiAnalysis,
+        timestamp: new Date().toISOString()
+      };
+
+      // The reading always gets recorded against the date it was drawn for,
+      // even if the user has since navigated away from that date.
+      journalData[selectedDate] = entryData;
+
+      try {
+        await saveCardToDB(selectedDate, entryData);
+      } catch (err) {
+        console.error("Failed to save entry:", err);
+        showToast("Reading generated, but saving it failed — please retry.", true);
+      }
+
+      renderHistory();
+
+      // Guard against a race: if the user switched to a different date while
+      // this reading was generating, don't clobber what they're now looking at.
+      const isStillOnSameDate = document.getElementById("entry-date").value === selectedDate;
+      if (isStillOnSameDate) {
+        document.getElementById("ai-loading").classList.add("hidden");
+        loadEntryForDate();
+      }
+    }
+
+    async function fetchGeminiCardReading(cardName) {
+      if (isVaultLockedNow()) {
+        return `⚠️ Vault Locked:\nTap '🔒 Lock' above and enter your passphrase to unlock your saved API key.`;
+      }
+      const apiKey = savedApiKeyVal;
+      if (!apiKey) {
+        return `⚠️ API Key Missing:\nClick '🔑 Key' above to paste your key and save it permanently.`;
+      }
+
+      const systemInstruction = `Act as an experienced, warm, intuitive tarot reader grounded in psychological reflection — like someone who blends tarot symbolism with the insight of a thoughtful therapist. Speak directly to me, avoid heavy occult or esoteric jargon, and avoid generic self-help clichés. Structure your response into these exact sections, using 2-3 sentences per section unless noted otherwise:
+
+**Card Symbolism:** Break down the key visual and traditional symbols on this card and what they represent.
+
+**Today's Energy:** What this card's energy means for my mindset, focus, or interactions today.
+
+**Blind Spots & Traps:** Any potential blind spots, overextensions, or traps this energy could lead me into today.
+
+**Life Areas in Focus:** How this energy might show up across areas like family, career, friends, or my emotional and mental wellbeing.
+
+**A Daily Action:** One concrete, simple thing I can do or avoid today (1-2 sentences).
+
+**A Short Affirmation:** A one-sentence, personal affirmation to carry with me today.`;
+
+      const todaysMoonPhase = moonPhaseName(getMoonPhase(new Date()));
+      const userPrompt = `Analyse today's tarot card draw: "${cardName}". Tonight's real moon phase is ${todaysMoonPhase} — you can weave that in briefly if it's relevant, but don't force it.`;
+
+      const result = await callGeminiAPI(GEMINI_MODEL_DAILY, `${systemInstruction}\n\n${userPrompt}`, apiKey);
+      return result.error ? `⚠️ ${result.error}` : result.text;
+    }
+
+    // Shows a shimmering placeholder in place of the card image until the
+    // (often remote, sometimes slow) Wikimedia artwork actually loads, then
+    // swaps it in with a brief reveal animation instead of a jarring pop-in.
+    // Pure CSS animation — negligible cost even on an older phone.
+    function revealCardImage(src) {
+      const imgEl = document.getElementById("card-image");
+      const skeletonEl = document.getElementById("card-skeleton");
+
+      imgEl.classList.remove("card-reveal");
+      imgEl.style.visibility = "hidden";
+      skeletonEl.classList.remove("hidden");
+
+      const finish = () => {
+        skeletonEl.classList.add("hidden");
+        imgEl.style.visibility = "visible";
+        // Restart the animation even if the same card is redrawn.
+        void imgEl.offsetWidth;
+        imgEl.classList.add("card-reveal");
+      };
+
+      if (imgEl.src === src && imgEl.complete) {
+        finish();
+        return;
+      }
+
+      imgEl.onload = finish;
+      imgEl.onerror = finish;
+      imgEl.src = src;
+    }
+
+    function loadEntryForDate() {
+      const selectedDate = document.getElementById("entry-date").value;
+      const entry = journalData[selectedDate];
+
+      const selectEl = document.getElementById("card-select");
+      const displayContainer = document.getElementById("reading-display-container");
+      const imgEl = document.getElementById("card-image");
+      const titleEl = document.getElementById("card-title");
+      const analysisText = document.getElementById("ai-analysis-text");
+
+      if (entry) {
+        selectEl.value = entry.card.name;
+        revealCardImage(entry.card.img);
+        titleEl.innerText = entry.card.name;
+        analysisText.innerHTML = formatAIText(entry.analysis);
+        displayContainer.classList.remove("hidden");
+      } else {
+        selectEl.value = "";
+        imgEl.src = "";
+        titleEl.innerText = "";
+        analysisText.innerText = "";
+        displayContainer.classList.add("hidden");
+      }
+    }
+
+    function editCardEntry(dateStr) {
+      const dateInput = document.getElementById("entry-date");
+      dateInput.value = dateStr;
+      loadEntryForDate();
+      dateInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function renderHistory() {
+      const container = document.getElementById("history-list");
+      container.innerHTML = "";
+
+      const sortedDates = Object.keys(journalData).sort().reverse();
+
+      if (sortedDates.length === 0) {
+        container.innerHTML = `<p class="text-xs app-subtle italic text-center py-4">No cards stored in device memory.</p>`;
+        return;
+      }
+
+      sortedDates.forEach(dateStr => {
+        const entry = journalData[dateStr];
+        const dateObj = new Date(dateStr + "T00:00:00");
+        const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+        const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+        const item = document.createElement("div");
+        item.className = "history-row";
+        item.onclick = () => editCardEntry(dateStr);
+
+        item.innerHTML = `
+          <div class="flex items-center gap-3">
+            <img src="${entry.card.img}" class="history-thumb">
+            <div>
+              <p class="text-xs font-bold app-heading">${formattedDate} <span class="app-subtle font-normal">(${dayOfWeek})</span></p>
+              <p class="text-xs app-subtle font-medium">${entry.card.name}</p>
+            </div>
+          </div>
+          <button class="text-xs font-semibold" style="color:var(--accent-violet-bright); background:transparent; border:none; padding:0;">Edit</button>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function computeAstroSignature(windowSize, cardHistory, natalChart) {
+      // Cheap, non-cryptographic signature — only used to detect "nothing has
+      // changed since the last run" so we don't burn an API call for free.
+      return `${windowSize}::${natalChart.length}:${natalChart}::${cardHistory}`;
+    }
+
+    async function generateAIAstroSynergy(forceRefresh = false) {
+      const container = document.getElementById("astro-synergy-result");
+      const loading = document.getElementById("astro-loading");
+      const dates = Object.keys(journalData);
+
+      if (dates.length === 0) {
+        container.innerText = "Please draw at least one card to generate an Astrological Synergy analysis.";
+        container.classList.remove("hidden");
+        return;
+      }
+
+      if (isVaultLockedNow()) {
+        container.innerHTML = `⚠️ Tap '🔒 Lock' above and enter your passphrase to unlock your saved API key and chart.`;
+        container.classList.remove("hidden");
+        return;
+      }
+
+      const apiKey = savedApiKeyVal;
+      if (!apiKey) {
+        container.innerHTML = `⚠️ Click '🔑 Key' above and enter your Gemini API Key.`;
+        container.classList.remove("hidden");
+        return;
+      }
+
+      const natalChart = savedNatalChartVal;
+      if (!natalChart) {
+        container.innerHTML = `⚠️ Click '🔮 Chart' above and enter your natal chart details.`;
+        container.classList.remove("hidden");
+        return;
+      }
+
+      // Chronological (oldest -> newest) so the AI reads this as an actual
+      // timeline rather than an unordered handful of cards. Window size is
+      // user-selectable so a longer journaling history doesn't force a huge
+      // (and pricier) prompt every time.
+      const windowSize = parseInt(document.getElementById("astro-window").value, 10) || 30;
+      const sortedDates = dates.sort().slice(-windowSize);
+      const cardHistory = sortedDates.map(d => {
+        const dayOfWeek = new Date(d + "T00:00:00").toLocaleDateString('en-US', { weekday: 'short' });
+        return `${d} (${dayOfWeek}): ${journalData[d].card.name}`;
+      }).join("\n");
+
+      // Avoid re-spending a Gemini call when nothing has changed since the
+      // last analysis (same window, same draws, same chart). Skipped when
+      // the user explicitly asks to regenerate.
+      const signature = computeAstroSignature(windowSize, cardHistory, natalChart);
+      let cached = null;
+      try {
+        cached = JSON.parse(localStorage.getItem("astro_synergy_cache") || "null");
+      } catch (err) {
+        cached = null;
+      }
+
+      if (!forceRefresh && cached && cached.signature === signature) {
+        container.innerHTML = `<p class="text-[10px] app-subtle mb-2">Showing your last analysis — no new draws since it was generated. <a href="#" onclick="generateAIAstroSynergy(true); return false;" style="text-decoration:underline;">Regenerate anyway</a></p><strong>Astrological & Tarot Synergy Analysis:</strong><br><br>${formatAIText(cached.result)}`;
+        container.classList.remove("hidden");
+        return;
+      }
+
+      loading.classList.remove("hidden");
+      container.classList.add("hidden");
+
+      const prompt = `Act as an expert astrologer and intuitive tarot analyst. Perform a trend analysis comparing my daily tarot draws against my natal chart to uncover hidden patterns, recurring themes, and cosmic alignments. Write in clear, warm, psychologically grounded language — if you use a technical term (like a decan or a planetary rulership), briefly explain it in plain words rather than assuming I already know it.
+
+My Natal Chart:
+${natalChart}
+
+Tarot Draw History (chronological, oldest to newest):
+${cardHistory}
+
+Analyze this tarot draw history against the natal chart above and provide a detailed report covering these exact sections:
+
+**1. Astrological Correspondences:** Map the drawn cards to their traditional astrological rulers (Major Arcana to signs/planets, Minor Arcana to suits/elements/decans). How closely do these draws align with the strengths or challenges shown in my natal chart?
+
+**2. Stalker Cards & Patterns:** Identify any "stalker cards" (cards drawn more than once) or repeating suits, numbers, or arcana types. What natal placements or planetary energies might these repeating cards be trying to trigger or wake up?
+
+**3. Thematic Summary:** Synthesize what these specific cards, drawn during this specific timeframe, suggest about my current psychological or spiritual transit.
+
+**4. Cosmic Homework:** Give me 2-3 reflective journal prompts based on the overlap between the bottlenecks in my natal chart and my recent tarot trends.`;
+
+      const result = await callGeminiAPI(GEMINI_MODEL_TREND, prompt, apiKey);
+      loading.classList.add("hidden");
+
+      if (result.error) {
+        container.innerText = `⚠️ ${result.error}`;
+        container.classList.remove("hidden");
+        return;
+      }
+
+      try {
+        localStorage.setItem("astro_synergy_cache", JSON.stringify({ signature, result: result.text }));
+      } catch (err) {
+        console.warn("Couldn't cache the astro synergy result:", err);
+      }
+
+      container.innerHTML = `<strong>Astrological & Tarot Synergy Analysis:</strong><br><br>${formatAIText(result.text)}`;
+      container.classList.remove("hidden");
+    }
+
+    // html2pdf.js (~400KB) is only needed if the user actually exports a PDF,
+    // which is occasional, not part of the daily flow. Loading it in <head> would
+    // cost that data on every single home-screen launch. Instead we fetch it once,
+    // on demand, and cache the loaded script for the rest of the session.
+    let html2pdfLoadPromise = null;
+    function ensureHtml2Pdf() {
+      if (window.html2pdf) return Promise.resolve();
+      if (html2pdfLoadPromise) return html2pdfLoadPromise;
+      html2pdfLoadPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        // Pinned to the current stable release. (0.10.1 and 0.9.3 both had
+        // real blank-output problems in testing; 0.14.0 is the actively
+        // maintained current version.)
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.14.0/html2pdf.bundle.min.js';
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Failed to load PDF export library.'));
+        document.head.appendChild(script);
+      });
+      return html2pdfLoadPromise;
+    }
+
+    async function exportToPDF() {
+      const exportBtn = document.getElementById('export-pdf-btn');
+      const originalLabel = exportBtn ? exportBtn.innerHTML : null;
+
+      try {
+        if (exportBtn) exportBtn.innerHTML = "Preparing…";
+        await ensureHtml2Pdf();
+      } catch (err) {
+        console.error(err);
+        if (exportBtn) exportBtn.innerHTML = originalLabel;
+        alert("Couldn't load the PDF export tool. Check your connection and try again.");
+        return;
+      }
+
+      // Wrapper collapses to zero height and clips overflow, so the export
+      // content never becomes visible or affects scrolling/layout — but unlike
+      // a fixed, off-screen-positioned element, it stays in the page's normal
+      // coordinate space. Combining "position: fixed" with html2canvas's
+      // windowWidth override is a known source of blank/mispositioned
+      // captures, since the two use different coordinate systems.
+      const wrapper = document.createElement('div');
+      wrapper.style.height = '0';
+      wrapper.style.overflow = 'hidden';
+
+      const element = document.createElement('div');
+      element.className = "p-6 bg-white text-gray-900";
+
+      // Fixed width matching the PDF page content area (8.5in page - 0.5in margins each side = 7.5in @ 96dpi = 720px)
+      // so html2canvas has a real, predictable layout to measure instead of an unattached 0-width node.
+      element.style.width = "720px";
+      element.style.boxSizing = "border-box";
+
+      let htmlContent = `<h1 style="font-size: 24px; font-weight: bold; color: #581c87; margin-bottom: 16px;">Tarot Journal History</h1>`;
+
+      Object.keys(journalData).sort().reverse().forEach(dateStr => {
+        const entry = journalData[dateStr];
+        const dateObj = new Date(dateStr + "T00:00:00");
+        const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+
+        htmlContent += `
+          <div style="margin-bottom: 20px; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px; page-break-inside: avoid; break-inside: avoid;">
+            <h3 style="font-weight: bold; color: #7e22ce;">${dateStr} (${dayOfWeek}) - ${entry.card.name}</h3>
+            <p style="font-style: italic; font-size: 13px; color: #374151; margin-top: 6px; white-space: pre-line;">${formatAIText(entry.analysis)}</p>
+          </div>
+        `;
+      });
+
+      element.innerHTML = htmlContent;
+      wrapper.appendChild(element);
+      document.body.appendChild(wrapper);
+
+      const opt = {
+        margin:       0.5,
+        filename:     'tarot_journal_history.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' },
+        pagebreak:    { mode: ['css', 'avoid-all'] }
+      };
+
+      try {
+        // iOS Safari, when a site is installed to the Home Screen (standalone
+        // mode), blocks the classic <a download> / blob-URL trick that
+        // jsPDF's own .save() uses internally — this is a long-standing
+        // WebKit restriction, not something fixable from inside the PDF
+        // library. Getting the PDF as a Blob and handing it to the native
+        // Share Sheet (Web Share API with files) is Apple's supported path
+        // for an installed web app to let the user save/send a generated
+        // file, so that's tried first; the old direct-download link is kept
+        // as a fallback for browsers where file sharing isn't available
+        // (e.g. desktop).
+        const pdfBlob = await html2pdf().set(opt).from(element).outputPdf('blob');
+        const pdfFile = new File([pdfBlob], 'tarot_journal_history.pdf', { type: 'application/pdf' });
+
+        if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+          try {
+            await navigator.share({ files: [pdfFile], title: 'Tarot Journal History' });
+          } catch (shareErr) {
+            if (shareErr && shareErr.name !== 'AbortError') {
+              throw shareErr;
+            }
+            // AbortError just means the user closed the share sheet — not a failure.
+          }
+        } else {
+          const url = URL.createObjectURL(pdfBlob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'tarot_journal_history.pdf';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 2000);
+        }
+      } catch (err) {
+        console.error('PDF export failed:', err);
+        alert("PDF export failed. You can also try the 'Share' button as an alternative.");
+      } finally {
+        document.body.removeChild(wrapper);
+        if (exportBtn) exportBtn.innerHTML = originalLabel;
+      }
+    }
+
+    // Builds the same history content as plain text, for sharing/copying.
+    // This has no dependency on any PDF/canvas library and no file-download
+    // step at all, so it works everywhere — including iOS home-screen apps —
+    // regardless of the platform quirks that can affect file export.
+    function buildHistoryText() {
+      const sortedDates = Object.keys(journalData).sort().reverse();
+      if (sortedDates.length === 0) return "No cards stored yet.";
+
+      let text = "Tarot Journal History\n\n";
+      sortedDates.forEach(dateStr => {
+        const entry = journalData[dateStr];
+        const dateObj = new Date(dateStr + "T00:00:00");
+        const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+        text += `${dateStr} (${dayOfWeek}) - ${entry.card.name}\n${entry.analysis}\n\n`;
+      });
+      return text.trim();
+    }
+
+    async function exportAsText() {
+      const btn = document.getElementById('export-text-btn');
+      const originalLabel = btn ? btn.innerHTML : null;
+      const text = buildHistoryText();
+
+      try {
+        if (navigator.share) {
+          try {
+            await navigator.share({ title: 'Tarot Journal History', text });
+            return;
+          } catch (shareErr) {
+            if (shareErr && shareErr.name !== 'AbortError') {
+              throw shareErr;
+            }
+            return; // user cancelled the share sheet
+          }
+        }
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+          if (btn) btn.innerHTML = "✅ Copied!";
+          setTimeout(() => { if (btn) btn.innerHTML = originalLabel; }, 1800);
+          return;
+        }
+
+        // Last-resort fallback with no platform dependencies at all: a
+        // selectable text prompt the user can manually copy.
+        window.prompt("Copy your journal history below:", text);
+      } catch (err) {
+        console.error('Text export failed:', err);
+        alert("Couldn't share or copy the text. Please try again.");
+      }
+    }
+  </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Tarot Journal">
+  <meta name="theme-color" content="#150f30">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="icon" href="icon-180.png">
+  <!-- Warm up the connection to the Gemini API host so the first daily-reading call starts faster -->
+  <link rel="preconnect" href="https://generativelanguage.googleapis.com">
+  <title>Celestial Tarot - Gemini 3.5 Flash</title>
+
+  <style>
+    body {
+      background-color: #f6f4fb;
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      -webkit-tap-highlight-color: transparent;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      letter-spacing: -0.01em;
+    }
+    header {
+      padding-top: calc(2.75rem + env(safe-area-inset-top));
+    }
+    /* iOS Safari auto-zooms the page on focus of any input/select under 16px.
+       Force 16px on the actual controls (visual size is unaffected, they still
+       look the same as before via their existing text-sm/text-xs classes). */
+    input, select {
+      font-size: 16px !important;
+    }
+    h1, h2, h3 { letter-spacing: -0.015em; }
+
+    /* Plain, non-decorative keyboard focus indicator (accessibility baseline,
+       not a designed micro-interaction). */
+    button:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 1px solid var(--text-muted, #8d81ab);
+      outline-offset: 2px;
+    }
+
+    /* Inline icon sizing so svg icons sit flush with text baselines */
+    .icon {
+      width: 1em;
+      height: 1em;
+      flex-shrink: 0;
+      vertical-align: -0.125em;
+    }
+    .btn-icon { width: 14px; height: 14px; }
+
+    /* Comfortably wider column on tablets/larger screens; the dual-column
+       history/astrology grid activates at the same breakpoint. */
+    @media (min-width: 480px) {
+      main { max-width: 34rem !important; }
+    }
+
+/* ---- Minimal hand-authored utility CSS (replaces Tailwind CDN JIT) ---- */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Layout / display */
+.block{display:block}.flex{display:flex}.flex-1{flex:1 1 0%}.flex-col{flex-direction:column}
+.hidden{display:none}.fixed{position:fixed}.sticky{position:sticky}
+.inset-0{top:0;right:0;bottom:0;left:0}.top-0{top:0}.z-10{z-index:10}.z-50{z-index:50}
+.min-h-screen{min-height:100vh}.overflow-y-auto{overflow-y:auto}
+.object-contain{object-fit:contain}
+
+/* Flex helpers */
+.items-center{align-items:center}.items-start{align-items:flex-start}
+.justify-between{justify-content:space-between}
+.justify-center{justify-content:center}
+.gap-1{gap:.25rem}.gap-1\.5{gap:.375rem}.gap-2{gap:.5rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}
+
+/* Spacing */
+.mb-1{margin-bottom:.25rem}.mb-2{margin-bottom:.5rem}.mb-4{margin-bottom:1rem}.mb-5{margin-bottom:1.25rem}
+.mt-2{margin-top:.5rem}.mt-3{margin-top:.75rem}.mt-4{margin-top:1rem}.mt-5{margin-top:1.25rem}.mt-6{margin-top:1.5rem}
+.mx-auto{margin-left:auto;margin-right:auto}
+.p-3{padding:.75rem}.p-4{padding:1rem}.p-6{padding:1.5rem}
+.pb-6{padding-bottom:1.5rem}.pb-4{padding-bottom:1rem}.pb-12{padding-bottom:3rem}.pr-1{padding-right:.25rem}
+.pt-2{padding-top:.5rem}.pt-5{padding-top:1.25rem}.pt-6{padding-top:1.5rem}
+.px-2{padding-left:.5rem;padding-right:.5rem}.px-2\.5{padding-left:.625rem;padding-right:.625rem}.px-3{padding-left:.75rem;padding-right:.75rem}
+.px-4{padding-left:1rem;padding-right:1rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}
+.py-0\.5{padding-top:.125rem;padding-bottom:.125rem}.py-1{padding-top:.25rem;padding-bottom:.25rem}
+.py-1\.5{padding-top:.375rem;padding-bottom:.375rem}.py-2{padding-top:.5rem;padding-bottom:.5rem}
+.py-2\.5{padding-top:.625rem;padding-bottom:.625rem}.py-3{padding-top:.75rem;padding-bottom:.75rem}
+.py-6{padding-top:1.5rem;padding-bottom:1.5rem}
+.space-y-2>*+*{margin-top:.5rem}.space-y-4>*+*{margin-top:1rem}
+
+/* Sizing */
+.h-56{height:14rem}
+.max-h-60{max-height:15rem}.max-w-md{max-width:28rem}.max-w-sm{max-width:24rem}
+.w-full{width:100%}
+
+/* Borders / radius */
+.rounded{border-radius:.25rem}.rounded-md{border-radius:.375rem}.rounded-lg{border-radius:.5rem}
+
+/* Backgrounds */
+.bg-black\/50{background-color:rgba(0,0,0,.5)}
+
+/* Typography */
+.font-bold{font-weight:700}.font-medium{font-weight:500}
+.font-normal{font-weight:400}.font-semibold{font-weight:600}
+.font-serif{font-family:ui-serif,Georgia,Cambria,"Times New Roman",Times,serif}
+.italic{font-style:italic}
+.text-2xl{font-size:1.5rem;line-height:2rem}
+.text-\[10px\]{font-size:10px}.text-\[11px\]{font-size:11px}
+.text-base{font-size:1rem;line-height:1.5rem}
+.text-center{text-align:center}
+.text-lg{font-size:1.125rem;line-height:1.75rem}
+.text-sm{font-size:.875rem;line-height:1.25rem}
+.text-xs{font-size:.75rem;line-height:1rem}
+.underline{text-decoration-line:underline}
+.whitespace-pre-line{white-space:pre-line}
+.leading-relaxed{line-height:1.625}
+
+/* ---- Flat, hairline-divided dashboard structure (replaces the boxed-card system) ---- */
+:root {
+  color-scheme: dark;
+  --bg-top: #1b1638;
+  --bg-bottom: #0b0918;
+  --panel: #17132b;
+  --border-soft: rgba(196,181,253,0.16);
+  --border-softer: rgba(196,181,253,0.10);
+  --text-heading: #f4eefc;
+  --text-body: #c9bfe0;
+  --text-muted: #8d81ab;
+  --accent-violet: #7c3aed;
+  --accent-violet-bright: #c4b5fd;
+  --accent-gold: #f0c869;
+}
+
+body {
+  background-color: var(--bg-bottom);
+  background-image:
+    radial-gradient(640px 360px at 25% -6%, rgba(167,139,250,.16), transparent 60%),
+    radial-gradient(420px 260px at 95% 4%, rgba(240,200,105,.07), transparent 55%),
+    linear-gradient(180deg, var(--bg-top), var(--bg-bottom) 70%);
+  background-attachment: fixed;
+  color: var(--text-body);
+}
+
+/* Single unified container for the whole app — replaces three separately
+   boxed/shadowed cards. Internal sections are divided by hairlines, not by
+   repeating another rounded, shadowed box. */
+.app-container {
+  background: var(--panel);
+  border: 1px solid var(--border-soft);
+  border-radius: 1.25rem;
+  overflow: hidden;
+}
+
+.app-block { padding: 1.75rem; }
+.app-block + .app-block { border-top: 1px solid var(--border-softer); }
+
+.dual-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  border-top: 1px solid var(--border-softer);
+}
+.app-subpanel { padding: 1.75rem; }
+.app-subpanel:not(:first-child) { border-top: 1px solid var(--border-softer); }
+
+@media (min-width: 480px) {
+  .dual-grid { grid-template-columns: 1fr 1fr; }
+  .app-subpanel:not(:first-child) { border-top: none; border-left: 1px solid var(--border-softer); }
+}
+
+.app-panel {
+  background: rgba(255,255,255,0.035);
+  border: 1px solid var(--border-softer);
+}
+
+.kicker { font-size: .8125rem; font-weight: 600; color: var(--text-muted); }
+.app-heading { color: var(--text-heading); }
+.app-body-text { color: var(--text-body); }
+.app-subtle { color: var(--text-muted); }
+
+.app-field {
+  background: rgba(255,255,255,0.045);
+  border: 1px solid var(--border-soft);
+  color: var(--text-heading);
+}
+.app-field::-webkit-datetime-edit { color: var(--text-heading); }
+.app-field:focus { outline: 1px solid var(--accent-violet-bright); outline-offset: 1px; }
+
+.app-btn-ghost {
+  background: transparent;
+  color: var(--accent-violet-bright);
+  border: 1px solid var(--border-soft);
+}
+
+.app-badge {
+  background: rgba(255,255,255,0.05);
+  color: var(--accent-violet-bright);
+  border: 1px solid var(--border-soft);
+}
+
+.app-btn-primary {
+  background: var(--accent-violet);
+  color: #fff;
+  border: none;
+}
+
+/* History: a quiet ledger of hairline-divided rows, not repeated boxed pills */
+.history-row {
+  display: flex; align-items: center; justify-content: space-between; gap: .75rem;
+  padding: .65rem 0;
+  border-bottom: 1px solid var(--border-softer);
+}
+.history-row:last-child { border-bottom: none; }
+.history-thumb {
+  width: 2.5rem; height: 3.4rem; object-fit: contain; border-radius: .375rem;
+  background: rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+.chart-panel {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border-softer);
+}
+
+/* ---- App chrome: sticky header + fixed bottom tab bar ----
+   These are the ONLY two surfaces using backdrop-filter. Restricting the
+   blur to just these two (small, non-overlapping) layers keeps GPU cost low
+   on an A14 chip — everything else uses plain semi-opaque panels instead of
+   glass, which look almost identical scrolling underneath a blurred bar but
+   cost nothing to render. */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  padding-top: calc(0.9rem + env(safe-area-inset-top));
+  padding-bottom: 0.9rem;
+  background: rgba(11, 9, 24, 0.72);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+  border-bottom: 1px solid var(--border-softer);
+}
+
+.tab-bar {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 40;
+  display: flex;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: rgba(11, 9, 24, 0.78);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+  border-top: 1px solid var(--border-softer);
+}
+
+.tab-btn {
+  flex: 1 1 0%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.6rem 0 0.5rem;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.tab-btn svg { width: 20px; height: 20px; opacity: 0.75; transition: opacity .15s, transform .15s; }
+.tab-btn.active { color: var(--accent-violet-bright); }
+.tab-btn.active svg { opacity: 1; transform: translateY(-1px); }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; animation: panelIn .22s ease; }
+@keyframes panelIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Reduce/skip motion for users who ask for it, and it's cheap to respect */
+@media (prefers-reduced-motion: reduce) {
+  .tab-panel.active, .card-reveal, .skeleton { animation: none !important; }
+}
+
+/* ---- Skeleton loading state for the card image (replaces plain "Generating…" text) ---- */
+.card-skeleton {
+  width: 9rem;
+  height: 14rem;
+  border-radius: .5rem;
+  background: linear-gradient(100deg,
+    rgba(255,255,255,0.05) 30%,
+    rgba(255,255,255,0.10) 50%,
+    rgba(255,255,255,0.05) 70%);
+  background-size: 200% 100%;
+  animation: shimmer 1.3s ease-in-out infinite;
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* Card image "reveal" — plays once each time a new card is drawn/loaded */
+.card-reveal { animation: cardReveal .32s cubic-bezier(.22,.9,.3,1); }
+@keyframes cardReveal {
+  from { opacity: 0; transform: scale(.93) translateY(6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Custom chevron on the native <select>, so it doesn't look like a bare
+   browser control sitting on a themed background. */
+select.app-field {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238d81ab' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.25rem;
+}
+
+  </style>
+</head>
+<body class="min-h-screen" style="padding-bottom: calc(4.75rem + env(safe-area-inset-bottom));">
+
+  <header class="app-header px-5">
+    <div class="max-w-md mx-auto flex justify-between items-start gap-4">
+      <div class="flex items-center gap-3">
+        <svg id="moon-glyph" width="30" height="30" viewBox="0 0 32 32" style="flex-shrink:0;"></svg>
+        <div>
+          <h1 class="text-2xl font-serif font-bold app-heading">Celestial Tarot</h1>
+          <p id="moon-phase-label" class="text-xs app-subtle font-medium">&nbsp;</p>
+        </div>
+      </div>
       <div class="flex items-center gap-2">
         <button onclick="toggleNatalModal()" class="px-3 py-1.5 app-btn-ghost text-xs font-semibold rounded-lg flex items-center gap-1.5">
           <svg class="icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>
