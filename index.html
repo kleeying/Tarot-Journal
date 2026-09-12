@@ -250,8 +250,8 @@ body {
   position: sticky;
   top: 0;
   z-index: 30;
-  padding-top: calc(0.9rem + env(safe-area-inset-top));
-  padding-bottom: 0.75rem;
+  padding-top: calc(0.65rem + env(safe-area-inset-top));
+  padding-bottom: 0.65rem;
   background: rgba(255, 255, 255, 0.82);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
   backdrop-filter: blur(16px) saturate(140%);
@@ -352,10 +352,10 @@ select.app-field {
 </head>
 <body class="min-h-screen" style="padding-bottom: calc(4.75rem + env(safe-area-inset-bottom));">
 
-  <header class="app-header px-5" style="position:relative;">
+  <header class="app-header px-5">
     <div class="max-w-md mx-auto">
-      <div class="flex items-baseline gap-2 mb-3">
-        <h1 class="text-2xl font-serif font-bold app-heading">Celestial Tarot</h1>
+      <div class="flex items-center gap-2 mb-2">
+        <h1 class="text-xl font-serif font-bold app-heading">Celestial Tarot</h1>
         <svg id="moon-glyph" width="14" height="14" viewBox="0 0 32 32" style="flex-shrink:0;"></svg>
         <p id="moon-phase-label" class="text-xs app-subtle font-medium">&nbsp;</p>
       </div>
@@ -368,9 +368,8 @@ select.app-field {
           <button onclick="toggleKeyModal()" aria-label="Gemini API key" class="p-2 app-btn-ghost rounded-lg flex items-center justify-center">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="16" r="3.5"/><path d="M10.5 13.5L20 4"/><path d="M16.5 7.5l3 3"/><path d="M14 10l2 2"/></svg>
           </button>
-          <button onclick="openSecurityModal()" class="px-2.5 py-1.5 app-btn-ghost text-xs font-semibold rounded-lg flex items-center gap-1.5">
-            <svg class="icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
-            <span id="lock-btn-label">Lock</span>
+          <button id="lock-btn" onclick="openSecurityModal()" aria-label="Lock" class="p-2 app-btn-ghost rounded-lg flex items-center justify-center">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
           </button>
           <button onclick="openAppInfoModal()" aria-label="App info" class="p-2 app-btn-ghost rounded-lg flex items-center justify-center">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="16" x2="12" y2="11"/><circle cx="12" cy="8" r="0.6" fill="currentColor" stroke="none"/></svg>
@@ -843,11 +842,12 @@ select.app-field {
     }
 
     function updateLockButtonLabel() {
-      const label = document.getElementById("lock-btn-label");
-      if (!label) return;
-      if (!vaultEnabled) label.textContent = "Lock";
-      else if (vaultPassphrase) label.textContent = "Unlocked";
-      else label.textContent = "Locked";
+      const btn = document.getElementById("lock-btn");
+      if (!btn) return;
+      let state = "Lock";
+      if (vaultEnabled) state = vaultPassphrase ? "Unlocked" : "Locked";
+      btn.setAttribute("aria-label", state);
+      btn.setAttribute("title", state);
     }
 
     function loadAllFromDB() {
