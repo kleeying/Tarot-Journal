@@ -175,14 +175,14 @@ body {
   border: 1px solid var(--border-softer);
 }
 
-.kicker { font-size: .8125rem; font-weight: 600; color: var(--text-muted); }
+.kicker { font-size: 1rem; font-weight: 600; color: var(--text-muted); }
 .kicker::before, .gold-tick::before {
   content: "";
   display: inline-block;
-  width: 3px; height: 0.75em;
+  width: 4px; height: 0.75em;
   border-radius: 2px;
   background: var(--accent-gold);
-  margin-right: 6px;
+  margin-right: 7px;
   vertical-align: -0.05em;
 }
 .reading-panel {
@@ -250,8 +250,8 @@ body {
   position: sticky;
   top: 0;
   z-index: 30;
-  padding-top: calc(0.65rem + env(safe-area-inset-top));
-  padding-bottom: 0.65rem;
+  padding-top: calc(0.55rem + env(safe-area-inset-top));
+  padding-bottom: 0.55rem;
   background: rgba(255, 255, 255, 0.82);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
   backdrop-filter: blur(16px) saturate(140%);
@@ -354,10 +354,10 @@ select.app-field {
 
   <header class="app-header px-5">
     <div class="max-w-md mx-auto">
-      <div class="flex items-center gap-2 mb-2">
-        <h1 class="text-xl font-serif font-bold app-heading">Celestial Tarot</h1>
+      <div class="flex items-center flex-wrap gap-1.5 mb-2">
+        <h1 class="text-xl font-serif font-bold app-heading" style="white-space:nowrap; flex-shrink:0;">Celestial Tarot</h1>
         <svg id="moon-glyph" width="14" height="14" viewBox="0 0 32 32" style="flex-shrink:0;"></svg>
-        <p id="moon-phase-label" class="text-xs app-subtle font-medium">&nbsp;</p>
+        <p id="moon-phase-label" class="text-xs app-subtle font-medium" style="white-space:nowrap;">&nbsp;</p>
       </div>
       <div class="flex items-center justify-between gap-2">
         <button onclick="toggleNatalModal()" class="px-3 py-1.5 app-btn-ghost text-xs font-semibold rounded-lg flex items-center gap-1.5">
