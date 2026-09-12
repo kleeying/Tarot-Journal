@@ -331,6 +331,10 @@ select.app-field {
           <svg class="icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="16" r="3.5"/><path d="M10.5 13.5L20 4"/><path d="M16.5 7.5l3 3"/><path d="M14 10l2 2"/></svg>
           Key
         </button>
+        <button onclick="openSecurityModal()" class="px-3 py-1.5 app-btn-ghost text-xs font-semibold rounded-lg flex items-center gap-1.5">
+          <svg class="icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          <span id="lock-btn-label">Lock</span>
+        </button>
       </div>
     </div>
   </header>
@@ -421,7 +425,17 @@ select.app-field {
           <p class="text-[11px] text-center app-subtle font-medium mt-2">Sun: Scorpio · Moon: Cancer · ASC: Gemini</p>
         </div>
 
-        <button onclick="generateAIAstroSynergy()" class="w-full py-3 mt-4 app-btn-primary font-semibold text-sm rounded-lg flex items-center justify-center gap-2">
+        <div class="flex items-center justify-between gap-2 mt-4">
+          <label for="astro-window" class="text-xs font-medium app-subtle">Lookback</label>
+          <select id="astro-window" class="app-field rounded-lg px-2 py-1 text-xs">
+            <option value="7">Last 7 draws</option>
+            <option value="30" selected>Last 30 draws</option>
+            <option value="90">Last 90 draws</option>
+            <option value="9999">All draws</option>
+          </select>
+        </div>
+
+        <button onclick="generateAIAstroSynergy()" class="w-full py-3 mt-3 app-btn-primary font-semibold text-sm rounded-lg flex items-center justify-center gap-2">
           <svg class="icon btn-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8L12 2z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15z"/></svg>
           Analyze card trends
         </button>
@@ -477,6 +491,14 @@ select.app-field {
         <button onclick="saveNatalChart()" class="flex-1 py-2 app-btn-primary text-xs font-semibold rounded-lg">Save chart</button>
         <button onclick="toggleNatalModal()" class="px-4 py-2 app-btn-ghost text-xs font-semibold rounded-lg">Cancel</button>
       </div>
+    </div>
+  </div>
+
+  <div id="security-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden p-4">
+    <div class="app-container w-full max-w-sm p-6 space-y-4">
+      <h3 class="text-base font-serif font-bold app-heading">Passphrase lock</h3>
+      <div id="security-modal-body" class="space-y-3"></div>
+      <button onclick="toggleSecurityModal()" class="w-full px-4 py-2 app-btn-ghost text-xs font-semibold rounded-lg">Close</button>
     </div>
   </div>
 
@@ -574,6 +596,19 @@ select.app-field {
     // writes never end up split across IndexedDB and localStorage.
     let storageMode = "indexeddb";
 
+    // Centralized so a future model rename/retirement is a one-line fix.
+    const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
+    const GEMINI_MODEL_DAILY = "gemini-3.5-flash-lite"; // cheap, used every day
+    const GEMINI_MODEL_TREND = "gemini-3.5-flash";      // used occasionally
+
+    // --- OPTIONAL PASSPHRASE LOCK FOR THE STORED KEY & NATAL CHART ---
+    // Off by default (fully backward compatible). When enabled, the API key
+    // and natal chart are encrypted at rest with a passphrase that is never
+    // itself stored — only held in memory for the current session, so the
+    // app "re-locks" on every fresh launch until unlocked again.
+    let vaultEnabled = localStorage.getItem("vault_enabled") === "1";
+    let vaultPassphrase = null;
+
     function initDB() {
       return new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, 2);
@@ -600,18 +635,172 @@ select.app-field {
       });
     }
 
+    // --- CRYPTO HELPERS FOR THE OPTIONAL PASSPHRASE LOCK ---
+    // AES-GCM with a PBKDF2-derived key. The passphrase itself is never
+    // stored anywhere — only the salt/iv/ciphertext are persisted.
+    function bufToBase64(buf) {
+      return btoa(String.fromCharCode(...new Uint8Array(buf)));
+    }
+    function base64ToBuf(b64) {
+      return Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    }
+
+    async function deriveVaultKey(passphrase, salt) {
+      const enc = new TextEncoder();
+      const baseKey = await crypto.subtle.importKey(
+        "raw", enc.encode(passphrase), "PBKDF2", false, ["deriveKey"]
+      );
+      return crypto.subtle.deriveKey(
+        { name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" },
+        baseKey,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["encrypt", "decrypt"]
+      );
+    }
+
+    async function encryptText(plainText, passphrase) {
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const key = await deriveVaultKey(passphrase, salt);
+      const cipherBuf = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv }, key, new TextEncoder().encode(plainText)
+      );
+      return `enc:v1:${bufToBase64(salt)}:${bufToBase64(iv)}:${bufToBase64(cipherBuf)}`;
+    }
+
+    async function decryptText(encoded, passphrase) {
+      const [, , saltB64, ivB64, cipherB64] = encoded.split(":");
+      const salt = base64ToBuf(saltB64);
+      const iv = base64ToBuf(ivB64);
+      const key = await deriveVaultKey(passphrase, salt);
+      const plainBuf = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv }, key, base64ToBuf(cipherB64)
+      );
+      return new TextDecoder().decode(plainBuf);
+    }
+
+    function isEncryptedValue(v) {
+      return typeof v === "string" && v.startsWith("enc:v1:");
+    }
+
+    // Reads one raw settings value regardless of storage mode, without
+    // touching the in-memory saved* variables — used only during unlock.
+    function getRawSetting(key) {
+      if (storageMode === "localstorage") {
+        return Promise.resolve(localStorage.getItem(key) || "");
+      }
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(SETTINGS_STORE, "readonly");
+        const req = tx.objectStore(SETTINGS_STORE).get(key);
+        req.onsuccess = () => resolve(req.result ? req.result.value : "");
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    // --- SHARED TEXT-RENDERING HELPERS ---
+    // Escapes the AI's raw text first (so nothing it returns can inject HTML),
+    // then re-introduces just the **bold** markers as real <strong> tags, so
+    // the "**Heading:**" sections in the prompts actually render as headings
+    // instead of showing literal asterisks.
+    function escapeHtml(str) {
+      const div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+    function formatAIText(raw) {
+      if (!raw) return "";
+      return escapeHtml(raw).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    }
+
+    // --- SHARED GEMINI API CALLER ---
+    // Used by both the daily reading and the astro synergy analysis, so
+    // fetch/timeout/error handling only needs to live in one place.
+    async function callGeminiAPI(model, promptText, apiKey, timeoutMs = 20000) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const res = await fetch(`${GEMINI_API_BASE}/${model}:generateContent`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": apiKey
+          },
+          body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: promptText }] }] }),
+          signal: controller.signal
+        });
+        const data = await res.json();
+        if (data.error) {
+          return { error: `Gemini API Error (${data.error.code}): ${data.error.message}` };
+        }
+        const text = data.candidates && data.candidates[0] && data.candidates[0].content
+          && data.candidates[0].content.parts && data.candidates[0].content.parts[0]
+          && data.candidates[0].content.parts[0].text;
+        if (!text) {
+          return { error: "Gemini returned an empty response." };
+        }
+        return { text };
+      } catch (err) {
+        if (err.name === "AbortError") {
+          return { error: "Request timed out contacting Gemini API. Please try again." };
+        }
+        console.error(err);
+        return { error: "Network error attempting to contact Gemini API." };
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+
+    // Applies whatever was read from storage (localStorage or IndexedDB) to
+    // the in-memory state and the Key/Chart inputs — detecting encrypted
+    // values and, if the vault is locked (enabled but not yet unlocked this
+    // session), keeping the fields blank and disabled instead of showing
+    // ciphertext or leaking data.
+    function applyLoadedSecrets(rawKey, rawChart) {
+      const keyInput = document.getElementById("gemini-key-input");
+      const chartInput = document.getElementById("natal-chart-input");
+      const locked = vaultEnabled && !vaultPassphrase && (isEncryptedValue(rawKey) || isEncryptedValue(rawChart));
+
+      if (locked) {
+        savedApiKeyVal = "";
+        savedNatalChartVal = "";
+        keyInput.value = "";
+        keyInput.placeholder = "🔒 Locked — tap Lock above to unlock";
+        keyInput.disabled = true;
+        chartInput.value = "";
+        chartInput.placeholder = "🔒 Locked — tap Lock above to unlock";
+        chartInput.disabled = true;
+      } else {
+        savedApiKeyVal = isEncryptedValue(rawKey) ? "" : rawKey;
+        savedNatalChartVal = isEncryptedValue(rawChart) ? "" : rawChart;
+        keyInput.value = savedApiKeyVal;
+        keyInput.disabled = false;
+        chartInput.value = savedNatalChartVal;
+        chartInput.disabled = false;
+      }
+      updateLockButtonLabel();
+    }
+
+    function updateLockButtonLabel() {
+      const label = document.getElementById("lock-btn-label");
+      if (!label) return;
+      if (!vaultEnabled) label.textContent = "Lock";
+      else if (vaultPassphrase) label.textContent = "Unlocked";
+      else label.textContent = "Locked";
+    }
+
     function loadAllFromDB() {
       if (storageMode === "localstorage") {
         journalData = JSON.parse(localStorage.getItem("tarot_journal_db") || "{}");
-        savedApiKeyVal = localStorage.getItem("gemini_api_key") || "";
-        document.getElementById("gemini-key-input").value = savedApiKeyVal;
-        savedNatalChartVal = localStorage.getItem("natal_chart") || "";
-        document.getElementById("natal-chart-input").value = savedNatalChartVal;
+        const rawKey = localStorage.getItem("gemini_api_key") || "";
+        const rawChart = localStorage.getItem("natal_chart") || "";
+        applyLoadedSecrets(rawKey, rawChart);
         return Promise.resolve();
       }
 
       return new Promise((resolve, reject) => {
         const tx = db.transaction([HISTORY_STORE, SETTINGS_STORE], "readonly");
+        let rawKey = "", rawChart = "";
 
         const historyStore = tx.objectStore(HISTORY_STORE);
         const historyReq = historyStore.getAll();
@@ -625,21 +814,18 @@ select.app-field {
         const settingsStore = tx.objectStore(SETTINGS_STORE);
         const keyReq = settingsStore.get("gemini_api_key");
         keyReq.onsuccess = () => {
-          if (keyReq.result) {
-            savedApiKeyVal = keyReq.result.value;
-            document.getElementById("gemini-key-input").value = savedApiKeyVal;
-          }
+          if (keyReq.result) rawKey = keyReq.result.value;
         };
 
         const natalReq = settingsStore.get("natal_chart");
         natalReq.onsuccess = () => {
-          if (natalReq.result) {
-            savedNatalChartVal = natalReq.result.value;
-            document.getElementById("natal-chart-input").value = savedNatalChartVal;
-          }
+          if (natalReq.result) rawChart = natalReq.result.value;
         };
 
-        tx.oncomplete = () => resolve();
+        tx.oncomplete = () => {
+          applyLoadedSecrets(rawKey, rawChart);
+          resolve();
+        };
         tx.onerror = () => reject(tx.error);
         tx.onabort = () => reject(tx.error);
       });
@@ -681,42 +867,30 @@ select.app-field {
       });
     }
 
-    function saveKeyToDB(keyVal) {
-      savedApiKeyVal = keyVal;
+    async function writeSettingRaw(key, rawValue) {
       if (storageMode === "localstorage") {
-        try {
-          localStorage.setItem("gemini_api_key", keyVal);
-          return Promise.resolve();
-        } catch (err) {
-          return Promise.reject(err);
-        }
+        localStorage.setItem(key, rawValue);
+        return;
       }
       return new Promise((resolve, reject) => {
         const tx = db.transaction(SETTINGS_STORE, "readwrite");
-        tx.objectStore(SETTINGS_STORE).put({ key: "gemini_api_key", value: keyVal });
+        tx.objectStore(SETTINGS_STORE).put({ key, value: rawValue });
         tx.oncomplete = () => resolve();
         tx.onerror = () => reject(tx.error);
         tx.onabort = () => reject(tx.error);
       });
     }
 
-    function saveNatalChartToDB(chartVal) {
+    async function saveKeyToDB(keyVal) {
+      savedApiKeyVal = keyVal;
+      const stored = (vaultEnabled && vaultPassphrase) ? await encryptText(keyVal, vaultPassphrase) : keyVal;
+      return writeSettingRaw("gemini_api_key", stored);
+    }
+
+    async function saveNatalChartToDB(chartVal) {
       savedNatalChartVal = chartVal;
-      if (storageMode === "localstorage") {
-        try {
-          localStorage.setItem("natal_chart", chartVal);
-          return Promise.resolve();
-        } catch (err) {
-          return Promise.reject(err);
-        }
-      }
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(SETTINGS_STORE, "readwrite");
-        tx.objectStore(SETTINGS_STORE).put({ key: "natal_chart", value: chartVal });
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
-        tx.onabort = () => reject(tx.error);
-      });
+      const stored = (vaultEnabled && vaultPassphrase) ? await encryptText(chartVal, vaultPassphrase) : chartVal;
+      return writeSettingRaw("natal_chart", stored);
     }
 
     // Lightweight, non-blocking status message — replaces alert() so a daily-use
@@ -849,7 +1023,15 @@ select.app-field {
       document.getElementById("key-modal").classList.toggle("hidden");
     }
 
+    function isVaultLockedNow() {
+      return vaultEnabled && !vaultPassphrase;
+    }
+
     async function saveApiKey() {
+      if (isVaultLockedNow()) {
+        showToast("Unlock the vault first (tap Lock above).", true);
+        return;
+      }
       const key = document.getElementById("gemini-key-input").value.trim();
       try {
         await saveKeyToDB(key);
@@ -866,6 +1048,10 @@ select.app-field {
     }
 
     async function saveNatalChart() {
+      if (isVaultLockedNow()) {
+        showToast("Unlock the vault first (tap Lock above).", true);
+        return;
+      }
       const chart = document.getElementById("natal-chart-input").value.trim();
       try {
         await saveNatalChartToDB(chart);
@@ -874,6 +1060,139 @@ select.app-field {
       } catch (err) {
         console.error("Failed to save natal chart:", err);
         showToast("Couldn't save the natal chart — please try again.", true);
+      }
+    }
+
+    function toggleSecurityModal() {
+      document.getElementById("security-modal").classList.toggle("hidden");
+    }
+
+    function openSecurityModal() {
+      renderSecurityModal();
+      document.getElementById("security-modal").classList.remove("hidden");
+    }
+
+    // Redraws the modal body for whichever of the three states applies:
+    // no lock set up, locked (needs unlocking this session), or unlocked.
+    function renderSecurityModal() {
+      const body = document.getElementById("security-modal-body");
+
+      if (!vaultEnabled) {
+        body.innerHTML = `
+          <p class="text-xs app-subtle leading-relaxed">
+            Encrypt your saved API key and natal chart with a passphrase. The passphrase itself is never stored — you'll need to re-enter it each time you reopen the app.
+          </p>
+          <input type="password" id="vault-passphrase-input" placeholder="New passphrase (min. 6 characters)" class="w-full app-field rounded-lg px-3 py-2 text-xs">
+          <input type="password" id="vault-passphrase-confirm" placeholder="Confirm passphrase" class="w-full app-field rounded-lg px-3 py-2 text-xs">
+          <button onclick="enableVaultLock()" class="w-full py-2 app-btn-primary text-xs font-semibold rounded-lg">Enable lock</button>
+        `;
+      } else if (!vaultPassphrase) {
+        body.innerHTML = `
+          <p class="text-xs app-subtle leading-relaxed">
+            🔒 Your key and chart are locked for this session. Enter your passphrase to unlock them.
+          </p>
+          <input type="password" id="vault-unlock-input" placeholder="Passphrase" class="w-full app-field rounded-lg px-3 py-2 text-xs">
+          <button onclick="unlockVaultSession()" class="w-full py-2 app-btn-primary text-xs font-semibold rounded-lg">Unlock</button>
+        `;
+      } else {
+        body.innerHTML = `
+          <p class="text-xs app-subtle leading-relaxed">
+            🔓 Unlocked for this session. It will re-lock the next time you close and reopen the app.
+          </p>
+          <button onclick="lockVaultSession()" class="w-full py-2 app-btn-ghost text-xs font-semibold rounded-lg">Lock now</button>
+          <button onclick="removeVaultLock()" class="w-full py-2 app-btn-ghost text-xs font-semibold rounded-lg" style="color:#7f1d1d;">Remove lock entirely</button>
+        `;
+      }
+    }
+
+    async function enableVaultLock() {
+      const p1 = document.getElementById("vault-passphrase-input").value;
+      const p2 = document.getElementById("vault-passphrase-confirm").value;
+      if (!p1 || p1.length < 6) {
+        showToast("Passphrase must be at least 6 characters.", true);
+        return;
+      }
+      if (p1 !== p2) {
+        showToast("Passphrases don't match.", true);
+        return;
+      }
+      try {
+        vaultPassphrase = p1;
+        vaultEnabled = true;
+        localStorage.setItem("vault_enabled", "1");
+        // Re-encrypt whatever is currently held in memory (plaintext) so it's
+        // protected at rest going forward.
+        if (savedApiKeyVal) await saveKeyToDB(savedApiKeyVal);
+        if (savedNatalChartVal) await saveNatalChartToDB(savedNatalChartVal);
+        updateLockButtonLabel();
+        renderSecurityModal();
+        showToast("Passphrase lock enabled.");
+      } catch (err) {
+        console.error("Failed to enable vault lock:", err);
+        showToast("Couldn't enable the lock — please try again.", true);
+      }
+    }
+
+    async function unlockVaultSession() {
+      const pass = document.getElementById("vault-unlock-input").value;
+      if (!pass) {
+        showToast("Enter your passphrase.", true);
+        return;
+      }
+      try {
+        const rawKey = await getRawSetting("gemini_api_key");
+        const rawChart = await getRawSetting("natal_chart");
+        const decryptedKey = isEncryptedValue(rawKey) ? await decryptText(rawKey, pass) : rawKey;
+        const decryptedChart = isEncryptedValue(rawChart) ? await decryptText(rawChart, pass) : rawChart;
+
+        vaultPassphrase = pass;
+        savedApiKeyVal = decryptedKey;
+        savedNatalChartVal = decryptedChart;
+
+        const keyInput = document.getElementById("gemini-key-input");
+        keyInput.value = decryptedKey;
+        keyInput.placeholder = "AIzaSy...";
+        keyInput.disabled = false;
+
+        const chartInput = document.getElementById("natal-chart-input");
+        chartInput.value = decryptedChart;
+        chartInput.placeholder = "Sun: 22°17' Scorpio…";
+        chartInput.disabled = false;
+
+        document.getElementById("vault-unlock-input").value = "";
+        updateLockButtonLabel();
+        renderSecurityModal();
+        showToast("Vault unlocked for this session.");
+      } catch (err) {
+        console.error("Failed to unlock vault:", err);
+        showToast("Wrong passphrase, or the data couldn't be decrypted.", true);
+      }
+    }
+
+    function lockVaultSession() {
+      vaultPassphrase = null;
+      applyLoadedSecrets("enc:v1:locked", "enc:v1:locked"); // force the locked UI state
+      renderSecurityModal();
+      showToast("Vault locked.");
+    }
+
+    async function removeVaultLock() {
+      try {
+        // Re-save the currently-decrypted values as plaintext, then turn the
+        // lock off entirely.
+        const keyVal = savedApiKeyVal;
+        const chartVal = savedNatalChartVal;
+        vaultEnabled = false;
+        vaultPassphrase = null;
+        localStorage.removeItem("vault_enabled");
+        if (keyVal) await writeSettingRaw("gemini_api_key", keyVal);
+        if (chartVal) await writeSettingRaw("natal_chart", chartVal);
+        updateLockButtonLabel();
+        renderSecurityModal();
+        showToast("Passphrase lock removed.");
+      } catch (err) {
+        console.error("Failed to remove vault lock:", err);
+        showToast("Couldn't remove the lock — please try again.", true);
       }
     }
 
@@ -950,9 +1269,12 @@ select.app-field {
     }
 
     async function fetchGeminiCardReading(cardName) {
+      if (isVaultLockedNow()) {
+        return `⚠️ Vault Locked:\nTap '🔒 Lock' above and enter your passphrase to unlock your saved API key.`;
+      }
       const apiKey = savedApiKeyVal;
       if (!apiKey) {
-        return `⚠️ API Key Missing:\nClick '🔑 Key Status' above to paste your key and save it permanently.`;
+        return `⚠️ API Key Missing:\nClick '🔑 Key' above to paste your key and save it permanently.`;
       }
 
       const systemInstruction = `Act as an experienced, warm, intuitive tarot reader grounded in psychological reflection — like someone who blends tarot symbolism with the insight of a thoughtful therapist. Speak directly to me, avoid heavy occult or esoteric jargon, and avoid generic self-help clichés. Structure your response into these exact sections, using 2-3 sentences per section unless noted otherwise:
@@ -969,33 +1291,11 @@ select.app-field {
 
 **A Short Affirmation:** A one-sentence, personal affirmation to carry with me today.`;
 
-      const userPrompt = `Analyse today's tarot card draw: "${cardName}".`;
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
+      const todaysMoonPhase = moonPhaseName(getMoonPhase(new Date()));
+      const userPrompt = `Analyse today's tarot card draw: "${cardName}". Tonight's real moon phase is ${todaysMoonPhase} — you can weave that in briefly if it's relevant, but don't force it.`;
 
-      try {
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [
-              {
-                role: 'user',
-                parts: [{ text: `${systemInstruction}\n\n${userPrompt}` }]
-              }
-            ]
-          })
-        });
-
-        const data = await res.json();
-        if (data.error) {
-          return `⚠️ Gemini API Error (${data.error.code}): ${data.error.message}`;
-        }
-
-        return data.candidates[0].content.parts[0].text;
-      } catch (err) {
-        console.error(err);
-        return `⚠️ Network error attempting to contact Gemini API.`;
-      }
+      const result = await callGeminiAPI(GEMINI_MODEL_DAILY, `${systemInstruction}\n\n${userPrompt}`, apiKey);
+      return result.error ? `⚠️ ${result.error}` : result.text;
     }
 
     // Shows a shimmering placeholder in place of the card image until the
@@ -1042,7 +1342,7 @@ select.app-field {
         selectEl.value = entry.card.name;
         revealCardImage(entry.card.img);
         titleEl.innerText = entry.card.name;
-        analysisText.innerText = entry.analysis;
+        analysisText.innerHTML = formatAIText(entry.analysis);
         displayContainer.classList.remove("hidden");
       } else {
         selectEl.value = "";
@@ -1095,7 +1395,13 @@ select.app-field {
       });
     }
 
-    async function generateAIAstroSynergy() {
+    function computeAstroSignature(windowSize, cardHistory, natalChart) {
+      // Cheap, non-cryptographic signature — only used to detect "nothing has
+      // changed since the last run" so we don't burn an API call for free.
+      return `${windowSize}::${natalChart.length}:${natalChart}::${cardHistory}`;
+    }
+
+    async function generateAIAstroSynergy(forceRefresh = false) {
       const container = document.getElementById("astro-synergy-result");
       const loading = document.getElementById("astro-loading");
       const dates = Object.keys(journalData);
@@ -1106,26 +1412,50 @@ select.app-field {
         return;
       }
 
-      // Chronological (oldest -> newest) so the AI reads this as an actual
-      // timeline rather than an unordered handful of cards. Capped to the
-      // most recent 60 draws to keep the prompt a reasonable size.
-      const sortedDates = dates.sort().slice(-60);
-      const cardHistory = sortedDates.map(d => {
-        const dayOfWeek = new Date(d + "T00:00:00").toLocaleDateString('en-US', { weekday: 'short' });
-        return `${d} (${dayOfWeek}): ${journalData[d].card.name}`;
-      }).join("\n");
-      const apiKey = savedApiKeyVal || localStorage.getItem('gemini_api_key');
+      if (isVaultLockedNow()) {
+        container.innerHTML = `⚠️ Tap '🔒 Lock' above and enter your passphrase to unlock your saved API key and chart.`;
+        container.classList.remove("hidden");
+        return;
+      }
 
+      const apiKey = savedApiKeyVal;
       if (!apiKey) {
         container.innerHTML = `⚠️ Click '🔑 Key' above and enter your Gemini API Key.`;
         container.classList.remove("hidden");
         return;
       }
 
-      const natalChart = savedNatalChartVal || localStorage.getItem('natal_chart');
-
+      const natalChart = savedNatalChartVal;
       if (!natalChart) {
         container.innerHTML = `⚠️ Click '🔮 Chart' above and enter your natal chart details.`;
+        container.classList.remove("hidden");
+        return;
+      }
+
+      // Chronological (oldest -> newest) so the AI reads this as an actual
+      // timeline rather than an unordered handful of cards. Window size is
+      // user-selectable so a longer journaling history doesn't force a huge
+      // (and pricier) prompt every time.
+      const windowSize = parseInt(document.getElementById("astro-window").value, 10) || 30;
+      const sortedDates = dates.sort().slice(-windowSize);
+      const cardHistory = sortedDates.map(d => {
+        const dayOfWeek = new Date(d + "T00:00:00").toLocaleDateString('en-US', { weekday: 'short' });
+        return `${d} (${dayOfWeek}): ${journalData[d].card.name}`;
+      }).join("\n");
+
+      // Avoid re-spending a Gemini call when nothing has changed since the
+      // last analysis (same window, same draws, same chart). Skipped when
+      // the user explicitly asks to regenerate.
+      const signature = computeAstroSignature(windowSize, cardHistory, natalChart);
+      let cached = null;
+      try {
+        cached = JSON.parse(localStorage.getItem("astro_synergy_cache") || "null");
+      } catch (err) {
+        cached = null;
+      }
+
+      if (!forceRefresh && cached && cached.signature === signature) {
+        container.innerHTML = `<p class="text-[10px] app-subtle mb-2">Showing your last analysis — no new draws since it was generated. <a href="#" onclick="generateAIAstroSynergy(true); return false;" style="text-decoration:underline;">Regenerate anyway</a></p><strong>Astrological & Tarot Synergy Analysis:</strong><br><br>${formatAIText(cached.result)}`;
         container.classList.remove("hidden");
         return;
       }
@@ -1133,7 +1463,7 @@ select.app-field {
       loading.classList.remove("hidden");
       container.classList.add("hidden");
 
-      const prompt = `Act as an expert astrologer and intuitive tarot analyst. Perform a trend analysis comparing my daily tarot draws against my natal chart to uncover hidden patterns, recurring themes, and cosmic alignments. Avoid heavy esoteric jargon — write in clear, warm, psychologically grounded language.
+      const prompt = `Act as an expert astrologer and intuitive tarot analyst. Perform a trend analysis comparing my daily tarot draws against my natal chart to uncover hidden patterns, recurring themes, and cosmic alignments. Write in clear, warm, psychologically grounded language — if you use a technical term (like a decan or a planetary rulership), briefly explain it in plain words rather than assuming I already know it.
 
 My Natal Chart:
 ${natalChart}
@@ -1151,32 +1481,23 @@ Analyze this tarot draw history against the natal chart above and provide a deta
 
 **4. Cosmic Homework:** Give me 2-3 reflective journal prompts based on the overlap between the bottlenecks in my natal chart and my recent tarot trends.`;
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
+      const result = await callGeminiAPI(GEMINI_MODEL_TREND, prompt, apiKey);
+      loading.classList.add("hidden");
+
+      if (result.error) {
+        container.innerText = `⚠️ ${result.error}`;
+        container.classList.remove("hidden");
+        return;
+      }
 
       try {
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-        });
-
-        const data = await res.json();
-        if (data.error) {
-          loading.classList.add("hidden");
-          container.innerText = `⚠️ API Error: ${data.error.message}`;
-          container.classList.remove("hidden");
-          return;
-        }
-
-        const resultText = data.candidates[0].content.parts[0].text;
-        loading.classList.add("hidden");
-        container.innerHTML = `<strong>Astrological & Tarot Synergy Analysis:</strong><br><br>${resultText}`;
-        container.classList.remove("hidden");
+        localStorage.setItem("astro_synergy_cache", JSON.stringify({ signature, result: result.text }));
       } catch (err) {
-        loading.classList.add("hidden");
-        container.innerText = "Network error contacting Gemini API.";
-        container.classList.remove("hidden");
+        console.warn("Couldn't cache the astro synergy result:", err);
       }
+
+      container.innerHTML = `<strong>Astrological & Tarot Synergy Analysis:</strong><br><br>${formatAIText(result.text)}`;
+      container.classList.remove("hidden");
     }
 
     // html2pdf.js (~400KB) is only needed if the user actually exports a PDF,
@@ -1242,7 +1563,7 @@ Analyze this tarot draw history against the natal chart above and provide a deta
         htmlContent += `
           <div style="margin-bottom: 20px; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px; page-break-inside: avoid; break-inside: avoid;">
             <h3 style="font-weight: bold; color: #7e22ce;">${dateStr} (${dayOfWeek}) - ${entry.card.name}</h3>
-            <p style="font-style: italic; font-size: 13px; color: #374151; margin-top: 6px; white-space: pre-line;">${entry.analysis}</p>
+            <p style="font-style: italic; font-size: 13px; color: #374151; margin-top: 6px; white-space: pre-line;">${formatAIText(entry.analysis)}</p>
           </div>
         `;
       });
