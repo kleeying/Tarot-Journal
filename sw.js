@@ -7,7 +7,7 @@
 // - Gemini API calls: intentionally never touched here — readings must always
 //   come from the network, not a stale cache.
 
-const SHELL_CACHE = "celestial-tarot-shell-v14";
+const SHELL_CACHE = "celestial-tarot-shell-v15";
 const IMAGE_CACHE = "celestial-tarot-images-v1";
 
 const SHELL_FILES = [
