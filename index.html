@@ -322,10 +322,16 @@ select.app-field {
           <p id="moon-phase-label" class="text-xs app-subtle font-medium">&nbsp;</p>
         </div>
       </div>
-      <button onclick="toggleKeyModal()" class="px-3 py-1.5 app-btn-ghost text-xs font-semibold rounded-lg flex items-center gap-1.5">
-        <svg class="icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="16" r="3.5"/><path d="M10.5 13.5L20 4"/><path d="M16.5 7.5l3 3"/><path d="M14 10l2 2"/></svg>
-        Key
-      </button>
+      <div class="flex items-center gap-2">
+        <button onclick="toggleNatalModal()" class="px-3 py-1.5 app-btn-ghost text-xs font-semibold rounded-lg flex items-center gap-1.5">
+          <svg class="icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>
+          Chart
+        </button>
+        <button onclick="toggleKeyModal()" class="px-3 py-1.5 app-btn-ghost text-xs font-semibold rounded-lg flex items-center gap-1.5">
+          <svg class="icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="16" r="3.5"/><path d="M10.5 13.5L20 4"/><path d="M16.5 7.5l3 3"/><path d="M14 10l2 2"/></svg>
+          Key
+        </button>
+      </div>
     </div>
   </header>
 
@@ -460,6 +466,20 @@ select.app-field {
     </div>
   </div>
 
+  <div id="natal-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden p-4">
+    <div class="app-container w-full max-w-sm p-6 space-y-4">
+      <h3 class="text-base font-serif font-bold app-heading">Natal chart setup</h3>
+      <p class="text-xs app-subtle leading-relaxed">
+        Paste your natal chart details below. It's stored only on this device and used to personalize the Astrological Synergy analysis.
+      </p>
+      <textarea id="natal-chart-input" rows="10" placeholder="Sun: 22°17' Scorpio&#10;Moon: 29°36' Cancer&#10;Ascendant: Gemini&#10;..." class="w-full app-field rounded-lg px-3 py-2 text-xs font-mono"></textarea>
+      <div class="flex gap-2">
+        <button onclick="saveNatalChart()" class="flex-1 py-2 app-btn-primary text-xs font-semibold rounded-lg">Save chart</button>
+        <button onclick="toggleNatalModal()" class="px-4 py-2 app-btn-ghost text-xs font-semibold rounded-lg">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const RIDER_WAITE_DECK = [
       { name: "The Fool", img: "https://upload.wikimedia.org/wikipedia/commons/9/90/RWS_Tarot_00_Fool.jpg", arcana: "Major" },
@@ -549,6 +569,7 @@ select.app-field {
     let db = null;
     let journalData = {};
     let savedApiKeyVal = "";
+    let savedNatalChartVal = "";
     // Decided once at startup and used consistently everywhere, so reads and
     // writes never end up split across IndexedDB and localStorage.
     let storageMode = "indexeddb";
@@ -584,6 +605,8 @@ select.app-field {
         journalData = JSON.parse(localStorage.getItem("tarot_journal_db") || "{}");
         savedApiKeyVal = localStorage.getItem("gemini_api_key") || "";
         document.getElementById("gemini-key-input").value = savedApiKeyVal;
+        savedNatalChartVal = localStorage.getItem("natal_chart") || "";
+        document.getElementById("natal-chart-input").value = savedNatalChartVal;
         return Promise.resolve();
       }
 
@@ -605,6 +628,14 @@ select.app-field {
           if (keyReq.result) {
             savedApiKeyVal = keyReq.result.value;
             document.getElementById("gemini-key-input").value = savedApiKeyVal;
+          }
+        };
+
+        const natalReq = settingsStore.get("natal_chart");
+        natalReq.onsuccess = () => {
+          if (natalReq.result) {
+            savedNatalChartVal = natalReq.result.value;
+            document.getElementById("natal-chart-input").value = savedNatalChartVal;
           }
         };
 
@@ -663,6 +694,25 @@ select.app-field {
       return new Promise((resolve, reject) => {
         const tx = db.transaction(SETTINGS_STORE, "readwrite");
         tx.objectStore(SETTINGS_STORE).put({ key: "gemini_api_key", value: keyVal });
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error);
+      });
+    }
+
+    function saveNatalChartToDB(chartVal) {
+      savedNatalChartVal = chartVal;
+      if (storageMode === "localstorage") {
+        try {
+          localStorage.setItem("natal_chart", chartVal);
+          return Promise.resolve();
+        } catch (err) {
+          return Promise.reject(err);
+        }
+      }
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(SETTINGS_STORE, "readwrite");
+        tx.objectStore(SETTINGS_STORE).put({ key: "natal_chart", value: chartVal });
         tx.oncomplete = () => resolve();
         tx.onerror = () => reject(tx.error);
         tx.onabort = () => reject(tx.error);
@@ -811,6 +861,22 @@ select.app-field {
       }
     }
 
+    function toggleNatalModal() {
+      document.getElementById("natal-modal").classList.toggle("hidden");
+    }
+
+    async function saveNatalChart() {
+      const chart = document.getElementById("natal-chart-input").value.trim();
+      try {
+        await saveNatalChartToDB(chart);
+        toggleNatalModal();
+        showToast("Natal chart saved.");
+      } catch (err) {
+        console.error("Failed to save natal chart:", err);
+        showToast("Couldn't save the natal chart — please try again.", true);
+      }
+    }
+
 
     function populateDropdown() {
       const selectEl = document.getElementById("card-select");
@@ -889,17 +955,19 @@ select.app-field {
         return `⚠️ API Key Missing:\nClick '🔑 Key Status' above to paste your key and save it permanently.`;
       }
 
-      const systemInstruction = `Act as a wise, warm, and experienced tarot reader. Avoid heavy occult or esoteric jargon. Structure your response into these exact short sections:
+      const systemInstruction = `Act as an experienced, warm, intuitive tarot reader grounded in psychological reflection — like someone who blends tarot symbolism with the insight of a thoughtful therapist. Speak directly to me, avoid heavy occult or esoteric jargon, and avoid generic self-help clichés. Structure your response into these exact sections, using 2-3 sentences per section unless noted otherwise:
 
-**The Vibe:** One simple sentence capturing the overall energy of the card.
+**Card Symbolism:** Break down the key visual and traditional symbols on this card and what they represent.
 
-**What It Means:** A brief, everyday explanation of the card's meaning.
+**Today's Energy:** What this card's energy means for my mindset, focus, or interactions today.
 
-**Today's Focus:** How I can apply this energy to my day today.
+**Blind Spots & Traps:** Any potential blind spots, overextensions, or traps this energy could lead me into today.
 
-**A Daily Action:** One concrete, simple thing I can do or avoid today.
+**Life Areas in Focus:** How this energy might show up across areas like family, career, friends, or my emotional and mental wellbeing.
 
-**A Short Affirmation:** A one-sentence positive thought to keep in mind.`;
+**A Daily Action:** One concrete, simple thing I can do or avoid today (1-2 sentences).
+
+**A Short Affirmation:** A one-sentence, personal affirmation to carry with me today.`;
 
       const userPrompt = `Analyse today's tarot card draw: "${cardName}".`;
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
@@ -1038,11 +1106,26 @@ select.app-field {
         return;
       }
 
-      const recentCards = dates.slice(0, 5).map(d => `${d}: ${journalData[d].card.name}`).join(", ");
+      // Chronological (oldest -> newest) so the AI reads this as an actual
+      // timeline rather than an unordered handful of cards. Capped to the
+      // most recent 60 draws to keep the prompt a reasonable size.
+      const sortedDates = dates.sort().slice(-60);
+      const cardHistory = sortedDates.map(d => {
+        const dayOfWeek = new Date(d + "T00:00:00").toLocaleDateString('en-US', { weekday: 'short' });
+        return `${d} (${dayOfWeek}): ${journalData[d].card.name}`;
+      }).join("\n");
       const apiKey = savedApiKeyVal || localStorage.getItem('gemini_api_key');
 
       if (!apiKey) {
-        container.innerHTML = `⚠️ Click '🔑 Key Status' above and enter your Gemini API Key.`;
+        container.innerHTML = `⚠️ Click '🔑 Key' above and enter your Gemini API Key.`;
+        container.classList.remove("hidden");
+        return;
+      }
+
+      const natalChart = savedNatalChartVal || localStorage.getItem('natal_chart');
+
+      if (!natalChart) {
+        container.innerHTML = `⚠️ Click '🔮 Chart' above and enter your natal chart details.`;
         container.classList.remove("hidden");
         return;
       }
@@ -1050,11 +1133,23 @@ select.app-field {
       loading.classList.remove("hidden");
       container.classList.add("hidden");
 
-      const prompt = `Act as a wise, warm tarot and astrology reader. Avoid esoteric jargon.
-User Natal Chart: Sun in Scorpio, Moon in Cancer, Gemini Ascendant.
-Stored Draws: ${recentCards}.
+      const prompt = `Act as an expert astrologer and intuitive tarot analyst. Perform a trend analysis comparing my daily tarot draws against my natal chart to uncover hidden patterns, recurring themes, and cosmic alignments. Avoid heavy esoteric jargon — write in clear, warm, psychologically grounded language.
 
-Synthesize these stored card draws with their natal chart in clear, warm language using brief sections.`;
+My Natal Chart:
+${natalChart}
+
+Tarot Draw History (chronological, oldest to newest):
+${cardHistory}
+
+Analyze this tarot draw history against the natal chart above and provide a detailed report covering these exact sections:
+
+**1. Astrological Correspondences:** Map the drawn cards to their traditional astrological rulers (Major Arcana to signs/planets, Minor Arcana to suits/elements/decans). How closely do these draws align with the strengths or challenges shown in my natal chart?
+
+**2. Stalker Cards & Patterns:** Identify any "stalker cards" (cards drawn more than once) or repeating suits, numbers, or arcana types. What natal placements or planetary energies might these repeating cards be trying to trigger or wake up?
+
+**3. Thematic Summary:** Synthesize what these specific cards, drawn during this specific timeframe, suggest about my current psychological or spiritual transit.
+
+**4. Cosmic Homework:** Give me 2-3 reflective journal prompts based on the overlap between the bottlenecks in my natal chart and my recent tarot trends.`;
 
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
 
