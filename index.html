@@ -122,8 +122,8 @@
   --bg-top: #f3eefb;
   --bg-bottom: #faf8fc;
   --panel: #ffffff;
-  --border-soft: rgba(124,58,237,0.14);
-  --border-softer: rgba(124,58,237,0.09);
+  --border-soft: rgba(124,58,237,0.22);
+  --border-softer: rgba(124,58,237,0.13);
   --text-heading: #2c2149;
   --text-body: #4a3f68;
   --text-muted: #766b91;
@@ -147,11 +147,25 @@ body {
    boxed/shadowed cards. Internal sections are divided by hairlines, not by
    repeating another rounded, shadowed box. */
 .app-container {
+  position: relative;
   background: var(--panel);
   border: 1px solid var(--border-soft);
   border-radius: 1.25rem;
   box-shadow: var(--shadow-card);
-  overflow: hidden;
+}
+/* Thin gold-to-violet hairline along the top edge — a small always-visible
+   touch of warmth so the celestial gold accent isn't only carried by the
+   moon glyph. Clipped to the container's own rounded corners via a
+   pseudo-element rather than overflow:hidden on the container itself,
+   so the drop shadow above is never clipped. */
+.app-container::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 1.25rem; right: 1.25rem;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent-gold), var(--accent-violet) 70%);
+  opacity: 0.55;
 }
 
 .app-block { padding: 1.75rem; }
@@ -171,7 +185,7 @@ body {
 }
 
 .app-panel {
-  background: rgba(124,58,237,0.045);
+  background: rgba(124,58,237,0.07);
   border: 1px solid var(--border-softer);
 }
 
@@ -181,7 +195,7 @@ body {
 .app-subtle { color: var(--text-muted); }
 
 .app-field {
-  background: rgba(124,58,237,0.04);
+  background: rgba(124,58,237,0.065);
   border: 1px solid var(--border-soft);
   color: var(--text-heading);
 }
@@ -192,10 +206,11 @@ body {
   background: #fff;
   color: var(--accent-violet-bright);
   border: 1px solid var(--border-soft);
+  box-shadow: 0 1px 2px rgba(44,33,73,0.05);
 }
 
 .app-badge {
-  background: rgba(124,58,237,0.06);
+  background: rgba(124,58,237,0.09);
   color: var(--accent-violet-bright);
   border: 1px solid var(--border-soft);
 }
@@ -204,6 +219,7 @@ body {
   background: var(--accent-violet);
   color: #fff;
   border: none;
+  box-shadow: 0 2px 8px rgba(109,40,217,0.25);
 }
 
 /* History: a quiet ledger of hairline-divided rows, not repeated boxed pills */
@@ -215,11 +231,11 @@ body {
 .history-row:last-child { border-bottom: none; }
 .history-thumb {
   width: 2.5rem; height: 3.4rem; object-fit: contain; border-radius: .375rem;
-  background: rgba(124,58,237,0.06);
+  background: rgba(124,58,237,0.09);
   flex-shrink: 0;
 }
 .chart-panel {
-  background: rgba(124,58,237,0.03);
+  background: rgba(124,58,237,0.055);
   border: 1px solid var(--border-softer);
 }
 
@@ -317,7 +333,7 @@ select.app-field {
 <body class="min-h-screen" style="padding-bottom: calc(4.75rem + env(safe-area-inset-bottom));">
 
   <header class="app-header px-5">
-    <div class="max-w-md mx-auto flex justify-between items-start gap-4">
+    <div class="max-w-md mx-auto flex flex-wrap justify-between items-start gap-3">
       <div class="flex items-center gap-3">
         <div>
           <h1 class="text-2xl font-serif font-bold app-heading">Celestial Tarot</h1>
@@ -985,7 +1001,7 @@ select.app-field {
       svg.innerHTML = `
         <circle cx="${cx}" cy="${cy}" r="${r}" fill="#c9922e"/>
         <circle cx="${cx + shift}" cy="${cy}" r="${r}" fill="#ffffff"/>
-        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(124,58,237,0.35)" stroke-width="1"/>
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#c9922e" stroke-width="1.25" opacity="0.9"/>
       `;
       document.getElementById("moon-phase-label").textContent = moonPhaseName(phase) + " tonight";
     }
