@@ -119,8 +119,8 @@
 /* ---- Flat, hairline-divided dashboard structure (replaces the boxed-card system) ---- */
 :root {
   color-scheme: light;
-  --bg-top: #f3eefb;
-  --bg-bottom: #faf8fc;
+  --bg-top: #ece1f8;
+  --bg-bottom: #f3eefb;
   --panel: #ffffff;
   --border-soft: rgba(124,58,237,0.22);
   --border-softer: rgba(124,58,237,0.13);
@@ -136,8 +136,8 @@
 body {
   background-color: var(--bg-bottom);
   background-image:
-    radial-gradient(640px 360px at 25% -6%, rgba(167,139,250,.10), transparent 60%),
-    radial-gradient(420px 260px at 95% 4%, rgba(201,146,46,.06), transparent 55%),
+    radial-gradient(640px 360px at 25% -6%, rgba(167,139,250,.14), transparent 60%),
+    radial-gradient(420px 260px at 95% 4%, rgba(201,146,46,.08), transparent 55%),
     linear-gradient(180deg, var(--bg-top), var(--bg-bottom) 70%);
   background-attachment: fixed;
   color: var(--text-body);
@@ -152,20 +152,6 @@ body {
   border: 1px solid var(--border-soft);
   border-radius: 1.25rem;
   box-shadow: var(--shadow-card);
-}
-/* Thin gold-to-violet hairline along the top edge — a small always-visible
-   touch of warmth so the celestial gold accent isn't only carried by the
-   moon glyph. Clipped to the container's own rounded corners via a
-   pseudo-element rather than overflow:hidden on the container itself,
-   so the drop shadow above is never clipped. */
-.app-container::before {
-  content: "";
-  position: absolute;
-  top: 0; left: 1.25rem; right: 1.25rem;
-  height: 2px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, var(--accent-gold), var(--accent-violet) 70%);
-  opacity: 0.55;
 }
 
 .app-block { padding: 1.75rem; }
@@ -185,11 +171,26 @@ body {
 }
 
 .app-panel {
-  background: rgba(124,58,237,0.07);
+  background: rgba(124,58,237,0.10);
   border: 1px solid var(--border-softer);
 }
 
 .kicker { font-size: .8125rem; font-weight: 600; color: var(--text-muted); }
+.kicker::before, .gold-tick::before {
+  content: "";
+  display: inline-block;
+  width: 3px; height: 0.75em;
+  border-radius: 2px;
+  background: var(--accent-gold);
+  margin-right: 6px;
+  vertical-align: -0.05em;
+}
+.reading-panel {
+  border-left: 3px solid var(--accent-gold);
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+.card-frame { border: 2px solid var(--accent-gold); }
 .app-heading { color: var(--text-heading); }
 .app-body-text { color: var(--text-body); }
 .app-subtle { color: var(--text-muted); }
@@ -250,11 +251,20 @@ body {
   top: 0;
   z-index: 30;
   padding-top: calc(0.9rem + env(safe-area-inset-top));
-  padding-bottom: 0.9rem;
+  padding-bottom: 0.75rem;
   background: rgba(255, 255, 255, 0.82);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
   backdrop-filter: blur(16px) saturate(140%);
-  border-bottom: 1px solid var(--border-softer);
+}
+/* Persistent gold-to-violet accent on the header's own edge — since the
+   header is sticky, this stays visible at every scroll position instead
+   of scrolling away with the card underneath it. */
+.app-header::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -3px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent-gold), #a15fb0 55%, var(--accent-violet));
 }
 
 .tab-bar {
@@ -270,12 +280,13 @@ body {
 }
 
 .tab-btn {
+  position: relative;
   flex: 1 1 0%;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.2rem;
-  padding: 0.6rem 0 0.5rem;
+  padding: 0.6rem 0 0.7rem;
   background: transparent;
   border: none;
   color: var(--text-muted);
@@ -286,6 +297,15 @@ body {
 .tab-btn svg { width: 20px; height: 20px; opacity: 0.75; transition: opacity .15s, transform .15s; }
 .tab-btn.active { color: var(--accent-violet-bright); }
 .tab-btn.active svg { opacity: 1; transform: translateY(-1px); }
+.tab-btn.active::after {
+  content: "";
+  position: absolute;
+  bottom: 3px; left: 50%;
+  transform: translateX(-50%);
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--accent-gold);
+}
 
 .tab-panel { display: none; }
 .tab-panel.active { display: block; animation: panelIn .22s ease; }
@@ -332,33 +352,30 @@ select.app-field {
 </head>
 <body class="min-h-screen" style="padding-bottom: calc(4.75rem + env(safe-area-inset-bottom));">
 
-  <header class="app-header px-5">
-    <div class="max-w-md mx-auto flex flex-wrap justify-between items-start gap-3">
-      <div class="flex items-center gap-3">
-        <div>
-          <h1 class="text-2xl font-serif font-bold app-heading">Celestial Tarot</h1>
-          <div class="flex items-center gap-1.5">
-            <svg id="moon-glyph" width="14" height="14" viewBox="0 0 32 32" style="flex-shrink:0;"></svg>
-            <p id="moon-phase-label" class="text-xs app-subtle font-medium">&nbsp;</p>
-          </div>
-        </div>
+  <header class="app-header px-5" style="position:relative;">
+    <div class="max-w-md mx-auto">
+      <div class="flex items-baseline gap-2 mb-3">
+        <h1 class="text-2xl font-serif font-bold app-heading">Celestial Tarot</h1>
+        <svg id="moon-glyph" width="14" height="14" viewBox="0 0 32 32" style="flex-shrink:0;"></svg>
+        <p id="moon-phase-label" class="text-xs app-subtle font-medium">&nbsp;</p>
       </div>
-      <div class="flex items-center gap-2 flex-wrap justify-end">
+      <div class="flex items-center justify-between gap-2">
         <button onclick="toggleNatalModal()" class="px-3 py-1.5 app-btn-ghost text-xs font-semibold rounded-lg flex items-center gap-1.5">
           <svg class="icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>
           Chart
         </button>
-        <button onclick="toggleKeyModal()" class="px-3 py-1.5 app-btn-ghost text-xs font-semibold rounded-lg flex items-center gap-1.5">
-          <svg class="icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="16" r="3.5"/><path d="M10.5 13.5L20 4"/><path d="M16.5 7.5l3 3"/><path d="M14 10l2 2"/></svg>
-          Key
-        </button>
-        <button onclick="openSecurityModal()" class="px-3 py-1.5 app-btn-ghost text-xs font-semibold rounded-lg flex items-center gap-1.5">
-          <svg class="icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
-          <span id="lock-btn-label">Lock</span>
-        </button>
-        <button onclick="openAppInfoModal()" aria-label="App info" class="p-2 app-btn-ghost rounded-lg flex items-center justify-center">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="16" x2="12" y2="11"/><circle cx="12" cy="8" r="0.6" fill="currentColor" stroke="none"/></svg>
-        </button>
+        <div class="flex items-center gap-2">
+          <button onclick="toggleKeyModal()" aria-label="Gemini API key" class="p-2 app-btn-ghost rounded-lg flex items-center justify-center">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="16" r="3.5"/><path d="M10.5 13.5L20 4"/><path d="M16.5 7.5l3 3"/><path d="M14 10l2 2"/></svg>
+          </button>
+          <button onclick="openSecurityModal()" class="px-2.5 py-1.5 app-btn-ghost text-xs font-semibold rounded-lg flex items-center gap-1.5">
+            <svg class="icon btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            <span id="lock-btn-label">Lock</span>
+          </button>
+          <button onclick="openAppInfoModal()" aria-label="App info" class="p-2 app-btn-ghost rounded-lg flex items-center justify-center">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="16" x2="12" y2="11"/><circle cx="12" cy="8" r="0.6" fill="currentColor" stroke="none"/></svg>
+          </button>
+        </div>
       </div>
     </div>
   </header>
@@ -386,20 +403,20 @@ select.app-field {
           <div class="flex flex-col items-center justify-center p-4 app-panel rounded-lg">
             <div id="card-image-wrap" style="position:relative;">
               <div id="card-skeleton" class="card-skeleton hidden"></div>
-              <img id="card-image" src="" alt="Tarot Card Illustration" class="h-56 rounded object-contain mb-2">
+              <img id="card-image" src="" alt="Tarot Card Illustration" class="h-56 rounded object-contain mb-2 card-frame">
             </div>
             <h3 id="card-title" class="text-sm font-serif font-bold app-heading"></h3>
           </div>
 
           <div id="ai-analysis-container" class="mt-5">
             <div class="flex items-center justify-between mb-2">
-              <span class="text-sm font-medium app-subtle">Daily Reading</span>
+              <span class="text-sm font-medium app-subtle gold-tick">Daily Reading</span>
               <span id="ai-status-badge" class="text-[10px] app-badge px-2 py-0.5 rounded-md font-semibold">Saved Reading</span>
             </div>
             <div id="ai-loading" class="hidden py-6 text-center text-xs app-subtle italic">
               Generating reading via Gemini 3.5 Flash-Lite…
             </div>
-            <div id="ai-analysis-text" class="text-sm leading-relaxed app-body-text font-serif app-panel p-4 rounded-lg whitespace-pre-line space-y-2"></div>
+            <div id="ai-analysis-text" class="text-sm leading-relaxed app-body-text font-serif app-panel reading-panel p-4 rounded-lg whitespace-pre-line space-y-2"></div>
           </div>
 
         </div>
@@ -468,7 +485,7 @@ select.app-field {
           Gemini 3.5 Flash is mapping your stored history…
         </div>
 
-        <div id="astro-synergy-result" class="hidden text-sm leading-relaxed app-body-text font-serif app-panel p-4 rounded-lg mt-3 whitespace-pre-line">
+        <div id="astro-synergy-result" class="hidden text-sm leading-relaxed app-body-text font-serif app-panel reading-panel p-4 rounded-lg mt-3 whitespace-pre-line">
         </div>
       </div>
     </section>
