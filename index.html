@@ -320,7 +320,6 @@ select.app-field {
         <div>
           <h1 class="text-2xl font-serif font-bold app-heading">Celestial Tarot</h1>
           <p id="moon-phase-label" class="text-xs app-subtle font-medium">&nbsp;</p>
-          <p id="app-build-label" class="text-[9px] app-subtle opacity-50"></p>
         </div>
       </div>
       <div class="flex items-center gap-2">
@@ -601,11 +600,6 @@ select.app-field {
     const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
     const GEMINI_MODEL_DAILY = "gemini-3.5-flash-lite"; // cheap, used every day
     const GEMINI_MODEL_TREND = "gemini-3.5-flash";      // used occasionally
-
-    // Bump this string on every deploy — shown in the header so you can
-    // glance at the app and confirm you're not looking at a stale cached
-    // copy (see sw.js's SHELL_CACHE, which should be bumped alongside it).
-    const APP_BUILD = "v12";
 
     // --- OPTIONAL PASSPHRASE LOCK FOR THE STORED KEY & NATAL CHART ---
     // Off by default (fully backward compatible). When enabled, the API key
@@ -994,8 +988,6 @@ select.app-field {
       const today = new Date().toISOString().split('T')[0];
       const dateInput = document.getElementById("entry-date");
       dateInput.value = today;
-
-      document.getElementById("app-build-label").textContent = `build ${APP_BUILD}`;
 
       populateDropdown();
       renderMoonGlyph(getMoonPhase(new Date()));
