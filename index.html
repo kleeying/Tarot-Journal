@@ -216,7 +216,7 @@ body {
 .orientation-btn.active { background: var(--accent-violet); color: #fff; }
 
 .orientation-badge {
-  display: inline-block;
+  display: none;
   margin-left: 0.4rem;
   font-size: 0.625rem;
   font-weight: 600;
@@ -226,6 +226,7 @@ body {
   border-radius: 999px;
   vertical-align: 1px;
 }
+.orientation-badge.is-visible { display: inline-block; }
 
 /* The AI's own **Label:** markers (Symbolism, Today's Energy, Reflection...)
    come through as inline <strong> tags inside a single running text block
@@ -529,7 +530,7 @@ select.app-field {
               <img id="card-image" src="" alt="Tarot Card Illustration" class="h-56 rounded object-contain mb-2 card-frame">
             </div>
             <h3 id="card-title" class="text-sm font-serif font-bold app-heading">
-              <span id="card-title-text"></span><span id="orientation-badge" class="orientation-badge hidden">Reversed</span>
+              <span id="card-title-text"></span><span id="orientation-badge" class="orientation-badge">Reversed</span>
             </h3>
           </div>
 
@@ -1467,7 +1468,7 @@ select.app-field {
 
       const imgEl = cardImgEl || document.getElementById("card-image");
       imgEl.classList.toggle("is-reversed", orientation === "reversed");
-      document.getElementById("orientation-badge").classList.toggle("hidden", orientation !== "reversed");
+      document.getElementById("orientation-badge").classList.toggle("is-visible", orientation === "reversed");
     }
 
     // Called by the toggle buttons. If a card is already drawn for this date,
