@@ -193,6 +193,39 @@ body {
   border-bottom-left-radius: 0;
 }
 .card-frame { border: 2px solid var(--accent-gold); }
+.card-frame.is-reversed { transform: rotate(180deg); }
+
+/* Upright/Reversed segmented toggle for the daily draw */
+.orientation-toggle {
+  display: flex;
+  border: 1px solid var(--border-soft);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: #fff;
+}
+.orientation-btn {
+  flex: 1 1 0%;
+  padding: 0.55rem 0;
+  border: none;
+  background: transparent;
+  color: var(--text-body);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+.orientation-btn + .orientation-btn { border-left: 1px solid var(--border-soft); }
+.orientation-btn.active { background: var(--accent-violet); color: #fff; }
+
+.orientation-badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: #993c1d;
+  background: #f5c4b3;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  vertical-align: 1px;
+}
 
 /* The AI's own **Label:** markers (Symbolism, Today's Energy, Reflection...)
    come through as inline <strong> tags inside a single running text block
@@ -480,6 +513,14 @@ select.app-field {
           </select>
         </div>
 
+        <div class="mb-2">
+          <label class="block text-sm font-medium app-subtle mb-2">Orientation</label>
+          <div id="orientation-toggle" class="orientation-toggle" role="group" aria-label="Card orientation">
+            <button type="button" id="orientation-upright-btn" class="orientation-btn active" onclick="setOrientation('upright')">Upright</button>
+            <button type="button" id="orientation-reversed-btn" class="orientation-btn" onclick="setOrientation('reversed')">Reversed</button>
+          </div>
+        </div>
+
         <div id="reading-display-container" class="hidden mt-6 pt-6" style="border-top: 1px solid var(--border-softer);">
 
           <div class="flex flex-col items-center justify-center p-4 app-panel rounded-lg">
@@ -487,7 +528,9 @@ select.app-field {
               <div id="card-skeleton" class="card-skeleton hidden"></div>
               <img id="card-image" src="" alt="Tarot Card Illustration" class="h-56 rounded object-contain mb-2 card-frame">
             </div>
-            <h3 id="card-title" class="text-sm font-serif font-bold app-heading"></h3>
+            <h3 id="card-title" class="text-sm font-serif font-bold app-heading">
+              <span id="card-title-text"></span><span id="orientation-badge" class="orientation-badge hidden">Reversed</span>
+            </h3>
           </div>
 
           <div id="ai-analysis-container" class="mt-5">
@@ -1411,6 +1454,33 @@ select.app-field {
       });
     }
 
+    // Tracks the orientation currently selected in the toggle. Reset to
+    // "upright" whenever a different card is chosen from the dropdown;
+    // preserved (and re-used) when the user flips the toggle on the card
+    // that's already showing.
+    let currentOrientation = "upright";
+
+    function updateOrientationUI(orientation, cardImgEl) {
+      currentOrientation = orientation;
+      document.getElementById("orientation-upright-btn").classList.toggle("active", orientation === "upright");
+      document.getElementById("orientation-reversed-btn").classList.toggle("active", orientation === "reversed");
+
+      const imgEl = cardImgEl || document.getElementById("card-image");
+      imgEl.classList.toggle("is-reversed", orientation === "reversed");
+      document.getElementById("orientation-badge").classList.toggle("hidden", orientation !== "reversed");
+    }
+
+    // Called by the toggle buttons. If a card is already drawn for this date,
+    // re-runs the draw with the new orientation so the reading matches what's
+    // shown; otherwise it just updates the toggle state for the next draw.
+    async function setOrientation(orientation) {
+      updateOrientationUI(orientation);
+      const selectedName = document.getElementById("card-select").value;
+      if (selectedName) {
+        await drawAndSaveReading(selectedName);
+      }
+    }
+
     async function handleCardSelect() {
       const selectedName = document.getElementById("card-select").value;
       const selectedDate = document.getElementById("entry-date").value;
@@ -1428,19 +1498,30 @@ select.app-field {
         return;
       }
 
+      // A newly picked card always starts upright; the user flips it
+      // afterward with the toggle if that's how they actually drew it.
+      updateOrientationUI("upright");
+      await drawAndSaveReading(selectedName);
+    }
+
+    async function drawAndSaveReading(selectedName) {
+      const selectedDate = document.getElementById("entry-date").value;
+      const orientation = currentOrientation;
       const cardObj = RIDER_WAITE_DECK.find(c => c.name === selectedName);
-      
+
       document.getElementById("reading-display-container").classList.remove("hidden");
       revealCardImage(cardObj.img);
-      document.getElementById("card-title").innerText = cardObj.name;
+      updateOrientationUI(orientation);
+      document.getElementById("card-title-text").innerText = cardObj.name;
       document.getElementById("ai-analysis-text").innerText = "";
       document.getElementById("ai-loading").classList.remove("hidden");
 
-      const aiAnalysis = await fetchGeminiCardReading(selectedName);
+      const aiAnalysis = await fetchGeminiCardReading(selectedName, orientation);
 
       const entryData = {
         card: cardObj,
         analysis: aiAnalysis,
+        orientation: orientation,
         timestamp: new Date().toISOString()
       };
 
@@ -1466,7 +1547,7 @@ select.app-field {
       }
     }
 
-    async function fetchGeminiCardReading(cardName) {
+    async function fetchGeminiCardReading(cardName, orientation) {
       if (isVaultLockedNow()) {
         return `⚠️ Vault Locked:\nTap '🔒 Lock' above and enter your passphrase to unlock your saved API key.`;
       }
@@ -1490,7 +1571,10 @@ select.app-field {
 **A Short Affirmation:** A one-sentence, personal affirmation to carry with me today.`;
 
       const todaysMoonPhase = moonPhaseName(getMoonPhase(new Date()));
-      const userPrompt = `Analyse today's tarot card draw: "${cardName}". Tonight's real moon phase is ${todaysMoonPhase} — you can weave that in briefly if it's relevant, but don't force it.`;
+      const orientationClause = orientation === "reversed"
+        ? ` This card was drawn reversed (upside down), not upright — interpret its meaning, tone, and blind spots accordingly, the way a tarot reader would treat a reversed card differently from an upright one.`
+        : ``;
+      const userPrompt = `Analyse today's tarot card draw: "${cardName}".${orientationClause} Tonight's real moon phase is ${todaysMoonPhase} — you can weave that in briefly if it's relevant, but don't force it.`;
 
       const result = await callGeminiAPI(GEMINI_MODEL_DAILY, `${systemInstruction}\n\n${userPrompt}`, apiKey);
       return result.error ? `⚠️ ${result.error}` : result.text;
@@ -1533,19 +1617,22 @@ select.app-field {
       const selectEl = document.getElementById("card-select");
       const displayContainer = document.getElementById("reading-display-container");
       const imgEl = document.getElementById("card-image");
-      const titleEl = document.getElementById("card-title");
       const analysisText = document.getElementById("ai-analysis-text");
 
       if (entry) {
         selectEl.value = entry.card.name;
         revealCardImage(entry.card.img);
-        titleEl.innerText = entry.card.name;
+        // Entries saved before orientation existed have no field — treat
+        // those as upright.
+        updateOrientationUI(entry.orientation === "reversed" ? "reversed" : "upright", imgEl);
+        document.getElementById("card-title-text").innerText = entry.card.name;
         analysisText.innerHTML = formatAIText(entry.analysis);
         displayContainer.classList.remove("hidden");
       } else {
         selectEl.value = "";
         imgEl.src = "";
-        titleEl.innerText = "";
+        updateOrientationUI("upright", imgEl);
+        document.getElementById("card-title-text").innerText = "";
         analysisText.innerText = "";
         displayContainer.classList.add("hidden");
       }
@@ -1584,7 +1671,7 @@ select.app-field {
             <img src="${entry.card.img}" class="history-thumb">
             <div>
               <p class="text-xs font-bold app-heading">${formattedDate} <span class="app-subtle font-normal">(${dayOfWeek})</span></p>
-              <p class="text-xs app-subtle font-medium">${entry.card.name}</p>
+              <p class="text-xs app-subtle font-medium">${entry.card.name}${entry.orientation === "reversed" ? " (Reversed)" : ""}</p>
             </div>
           </div>
           <button class="text-xs font-semibold" style="color:var(--accent-violet-bright); background:transparent; border:none; padding:0;">Edit</button>
@@ -1638,7 +1725,7 @@ select.app-field {
       const sortedDates = dates.sort().slice(-windowSize);
       const cardHistory = sortedDates.map(d => {
         const dayOfWeek = new Date(d + "T00:00:00").toLocaleDateString('en-US', { weekday: 'short' });
-        return `${d} (${dayOfWeek}): ${journalData[d].card.name}`;
+        return `${d} (${dayOfWeek}): ${journalData[d].card.name}${journalData[d].orientation === "reversed" ? " (Reversed)" : ""}`;
       }).join("\n");
 
       // Avoid re-spending a Gemini call when nothing has changed since the
@@ -1760,7 +1847,7 @@ Analyze this tarot draw history against the natal chart above and provide a deta
 
         htmlContent += `
           <div style="margin-bottom: 20px; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px; page-break-inside: avoid; break-inside: avoid;">
-            <h3 style="font-weight: bold; color: #7e22ce;">${dateStr} (${dayOfWeek}) - ${entry.card.name}</h3>
+            <h3 style="font-weight: bold; color: #7e22ce;">${dateStr} (${dayOfWeek}) - ${entry.card.name}${entry.orientation === "reversed" ? " (Reversed)" : ""}</h3>
             <p style="font-style: italic; font-size: 13px; color: #374151; margin-top: 6px; white-space: pre-line;">${formatAIText(entry.analysis)}</p>
           </div>
         `;
@@ -1834,7 +1921,7 @@ Analyze this tarot draw history against the natal chart above and provide a deta
         const entry = journalData[dateStr];
         const dateObj = new Date(dateStr + "T00:00:00");
         const dayOfWeek = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
-        text += `${dateStr} (${dayOfWeek}) - ${entry.card.name}\n${entry.analysis}\n\n`;
+        text += `${dateStr} (${dayOfWeek}) - ${entry.card.name}${entry.orientation === "reversed" ? " (Reversed)" : ""}\n${entry.analysis}\n\n`;
       });
       return text.trim();
     }
