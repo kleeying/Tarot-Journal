@@ -11,7 +11,7 @@
   <link rel="icon" href="icon-180.png">
   <!-- Warm up the connection to the Gemini API host so the first daily-reading call starts faster -->
   <link rel="preconnect" href="https://generativelanguage.googleapis.com">
-  <title>Celestial Tarot - Gemini 3.5 Flash</title>
+  <title>Celestial Tarot - Gemini 3.6 Flash</title>
 
   <style>
     body {
@@ -608,7 +608,7 @@ select.app-field {
         </button>
 
         <div id="astro-loading" class="hidden text-center text-xs app-subtle italic py-2 mt-2">
-          Gemini 3.5 Flash is mapping your stored history…
+          Gemini 3.6 Flash is mapping your stored history…
         </div>
 
         <div id="astro-synergy-result" class="hidden text-sm leading-relaxed app-body-text font-serif app-panel reading-panel p-4 rounded-lg mt-3 whitespace-pre-line">
@@ -780,7 +780,7 @@ select.app-field {
     // Centralized so a future model rename/retirement is a one-line fix.
     const GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
     const GEMINI_MODEL_DAILY = "gemini-3.5-flash-lite"; // cheap, used every day
-    const GEMINI_MODEL_TREND = "gemini-3.5-flash";      // used occasionally
+    const GEMINI_MODEL_TREND = "gemini-3.6-flash";      // used occasionally
 
     // Bump this string on every deploy — checked on demand via the small
     // "App info" (ⓘ) header button rather than shown at all times, so it
@@ -1557,19 +1557,21 @@ select.app-field {
         return `⚠️ API Key Missing:\nClick '🔑 Key' above to paste your key and save it permanently.`;
       }
 
-      const systemInstruction = `Act as an experienced, warm, intuitive tarot reader grounded in psychological reflection — like someone who blends tarot symbolism with the insight of a thoughtful therapist. Speak directly to me, avoid heavy occult or esoteric jargon, and avoid generic self-help clichés. Structure your response into these exact sections, using 2-3 sentences per section unless noted otherwise:
+      const systemInstruction = `Act as an experienced, warm, intuitive tarot reader grounded in psychological reflection — like a thoughtful therapist who uses tarot symbolism as a mirror for the subconscious. Avoid heavy occult jargon and generic self-help clichés. To ensure today's reading feels distinct, deeply specific, and radically different from other days, avoid sweeping generalizations. Instead, anchor your insights into the hyper-specific psychological tensions, micro-behaviors, and nuanced emotional landscapes unique to this exact card.
 
-**Card Symbolism:** Break down the key visual and traditional symbols on this card and what they represent.
+Speak directly to me, maintaining a warm and grounded tone. Structure your response into these exact sections, using 2-3 sentences per section unless noted otherwise:
 
-**Today's Energy:** What this card's energy means for my mindset, focus, or interactions today.
+**Card Symbolism:** Break down the specific, often overlooked visual details and traditional symbols on this card, explaining the psychological tension or duality they represent.
 
-**Blind Spots & Traps:** Any potential blind spots, overextensions, or traps this energy could lead me into today.
+**Today's Energy:** Describe how this card’s distinct energetic signature manifests in my immediate mental focus, emotional undertone, or interpersonal dynamics today, focusing on specific internal states rather than broad moods.
 
-**Life Areas in Focus:** How this energy might show up across areas like family, career, friends, or my emotional and mental wellbeing.
+**Blind Spots & Traps:** Highlight the subtle psychological pitfalls, cognitive distortions, or behavioral overextensions this specific card warns against today—essentially, how this energy looks when it goes too far.
 
-**A Daily Action:** One concrete, simple thing I can do or avoid today (1-2 sentences).
+**Life Areas in Focus:** Pinpoint exactly how this energy distinctively ripples across 1–2 specific areas of life today (such as family, career, friendships, or mental wellbeing), focusing on concrete relational or operational dynamics.
 
-**A Short Affirmation:** A one-sentence, personal affirmation to carry with me today.`;
+**A Daily Action:** One concrete, highly specific micro-action I can take or boundary I can set today to integrate this reading (1-2 sentences).
+
+**A Short Affirmation:** A grounded, one-sentence personal affirmation that captures the specific growth edge of this card today.`;
 
       const todaysMoonPhase = moonPhaseName(getMoonPhase(new Date()));
       const orientationClause = orientation === "reversed"
@@ -1675,10 +1677,54 @@ select.app-field {
               <p class="text-xs app-subtle font-medium">${entry.card.name}${entry.orientation === "reversed" ? " (Reversed)" : ""}</p>
             </div>
           </div>
-          <button class="text-xs font-semibold" style="color:var(--accent-violet-bright); background:transparent; border:none; padding:0;">Edit</button>
+          <div class="flex items-center gap-4">
+            <button class="text-xs font-semibold" style="color:var(--accent-violet-bright); background:transparent; border:none; padding:0;">Edit</button>
+            <button class="history-delete-btn text-xs font-semibold" aria-label="Delete this entry" style="color:#b4413a; background:transparent; border:none; padding:0;">Delete</button>
+          </div>
         `;
+        // Delete must not also trigger the row's "open for editing" click.
+        item.querySelector(".history-delete-btn").onclick = (e) => {
+          e.stopPropagation();
+          deleteHistoryEntry(dateStr);
+        };
         container.appendChild(item);
       });
+    }
+
+    // Removes a single stored card from history (e.g. one entered by mistake
+    // that can't be re-drawn). Asks first, since it can't be undone.
+    async function deleteHistoryEntry(dateStr) {
+      const entry = journalData[dateStr];
+      if (!entry) return;
+
+      const dateObj = new Date(dateStr + "T00:00:00");
+      const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const cardLabel = `${entry.card.name}${entry.orientation === "reversed" ? " (Reversed)" : ""}`;
+
+      if (!confirm(`Delete this entry?\n\n${formattedDate} — ${cardLabel}\n\nThis can't be undone.`)) {
+        return;
+      }
+
+      // Remove from memory first (localStorage mode saves the whole journal),
+      // and put it back if the storage delete fails so nothing is silently lost.
+      delete journalData[dateStr];
+      try {
+        await deleteCardFromDB(dateStr);
+      } catch (err) {
+        console.error("Failed to delete entry:", err);
+        journalData[dateStr] = entry;
+        renderHistory();
+        showToast("Couldn't delete that entry — please try again.", true);
+        return;
+      }
+
+      renderHistory();
+
+      // If that date is the one currently open on the Today tab, clear it too.
+      if (document.getElementById("entry-date").value === dateStr) {
+        loadEntryForDate();
+      }
+      showToast("Entry deleted.");
     }
 
     function computeAstroSignature(windowSize, cardHistory, natalChart) {
