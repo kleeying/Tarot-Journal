@@ -608,7 +608,7 @@ select.app-field {
         </button>
 
         <div id="astro-loading" class="hidden text-center text-xs app-subtle italic py-2 mt-2">
-          Gemini 3.6 Flash is mapping your stored history…
+          Gemini 3.6 Flash is mapping your stored history… this can take up to a minute, please keep the app open.
         </div>
 
         <div id="astro-synergy-result" class="hidden text-sm leading-relaxed app-body-text font-serif app-panel reading-panel p-4 rounded-lg mt-3 whitespace-pre-line">
@@ -1813,7 +1813,9 @@ Analyze this tarot draw history against the natal chart above and provide a deta
 
 **4. Cosmic Homework:** Give me 2-3 reflective journal prompts based on the overlap between the bottlenecks in my natal chart and my recent tarot trends.`;
 
-      const result = await callGeminiAPI(GEMINI_MODEL_TREND, prompt, apiKey);
+      // The trend report is a long prompt with a long answer, so it needs far
+      // more time than the 20s default used for the short daily reading.
+      const result = await callGeminiAPI(GEMINI_MODEL_TREND, prompt, apiKey, 90000);
       loading.classList.add("hidden");
 
       if (result.error) {
