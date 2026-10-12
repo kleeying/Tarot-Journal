@@ -195,6 +195,27 @@ body {
 .card-frame { border: 2px solid var(--accent-gold); }
 .card-frame.is-reversed { transform: rotate(180deg); }
 
+/* Shown in place of the card art only when every image source has failed.
+   Hidden by default and shown via .is-visible so no other display rule can
+   override it. */
+.card-image-error {
+  display: none;
+  width: 9rem;
+  height: 14rem;
+  margin-bottom: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+  border: 1px dashed var(--border-soft);
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+.card-image-error.is-visible { display: flex; }
+
 /* Upright/Reversed segmented toggle for the daily draw */
 .orientation-toggle {
   display: flex;
@@ -527,7 +548,10 @@ select.app-field {
           <div class="flex flex-col items-center justify-center p-4 app-panel rounded-lg">
             <div id="card-image-wrap" style="position:relative;">
               <div id="card-skeleton" class="card-skeleton hidden"></div>
-              <img id="card-image" src="" alt="Tarot Card Illustration" class="h-56 rounded object-contain mb-2 card-frame">
+              <div id="card-image-error" class="card-image-error" role="button" tabindex="0" onclick="retryCardImage()">
+                Couldn't load this card image.<br>Tap to retry.
+              </div>
+              <img id="card-image" alt="Tarot Card Illustration" class="h-56 rounded object-contain mb-2 card-frame">
             </div>
             <h3 id="card-title" class="text-sm font-serif font-bold app-heading">
               <span id="card-title-text"></span><span id="orientation-badge" class="orientation-badge">Reversed</span>
@@ -691,7 +715,7 @@ select.app-field {
       { name: "The Empress", img: "https://upload.wikimedia.org/wikipedia/commons/d/d2/RWS_Tarot_03_Empress.jpg", arcana: "Major" },
       { name: "The Emperor", img: "https://upload.wikimedia.org/wikipedia/commons/c/c3/RWS_Tarot_04_Emperor.jpg", arcana: "Major" },
       { name: "The Hierophant", img: "https://upload.wikimedia.org/wikipedia/commons/8/8d/RWS_Tarot_05_Hierophant.jpg", arcana: "Major" },
-      { name: "The Lovers", img: "https://upload.wikimedia.org/wikipedia/commons/3/3a/TheLovers.jpg", arcana: "Major" },
+      { name: "The Lovers", img: "https://upload.wikimedia.org/wikipedia/commons/d/db/RWS_Tarot_06_Lovers.jpg", arcana: "Major" },
       { name: "The Chariot", img: "https://upload.wikimedia.org/wikipedia/commons/9/9b/RWS_Tarot_07_Chariot.jpg", arcana: "Major" },
       { name: "Strength", img: "https://upload.wikimedia.org/wikipedia/commons/f/f5/RWS_Tarot_08_Strength.jpg", arcana: "Major" },
       { name: "The Hermit", img: "https://upload.wikimedia.org/wikipedia/commons/4/4d/RWS_Tarot_09_Hermit.jpg", arcana: "Major" },
@@ -706,21 +730,21 @@ select.app-field {
       { name: "The Moon", img: "https://upload.wikimedia.org/wikipedia/commons/7/7f/RWS_Tarot_18_Moon.jpg", arcana: "Major" },
       { name: "The Sun", img: "https://upload.wikimedia.org/wikipedia/commons/1/17/RWS_Tarot_19_Sun.jpg", arcana: "Major" },
       { name: "Judgement", img: "https://upload.wikimedia.org/wikipedia/commons/d/dd/RWS_Tarot_20_Judgement.jpg", arcana: "Major" },
-      { name: "The World", img: "https://upload.wikimedia.org/wikipedia/commons/ff/ff/RWS_Tarot_21_World.jpg", arcana: "Major" },
+      { name: "The World", img: "https://upload.wikimedia.org/wikipedia/commons/f/ff/RWS_Tarot_21_World.jpg", arcana: "Major" },
       { name: "Ace of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/1/11/Wands01.jpg", arcana: "Wands" },
       { name: "Two of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/0/0f/Wands02.jpg", arcana: "Wands" },
-      { name: "Three of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/ff/ff/Wands03.jpg", arcana: "Wands" },
+      { name: "Three of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/f/ff/Wands03.jpg", arcana: "Wands" },
       { name: "Four of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/a/a4/Wands04.jpg", arcana: "Wands" },
       { name: "Five of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/9/9d/Wands05.jpg", arcana: "Wands" },
       { name: "Six of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/3/3b/Wands06.jpg", arcana: "Wands" },
       { name: "Seven of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/e/e4/Wands07.jpg", arcana: "Wands" },
       { name: "Eight of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/6/6b/Wands08.jpg", arcana: "Wands" },
-      { name: "Nine of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/4/4d/Wands09.jpg", arcana: "Wands" },
+      { name: "Nine of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/e/e7/Wands09.jpg", arcana: "Wands" },
       { name: "Ten of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/0/0b/Wands10.jpg", arcana: "Wands" },
       { name: "Page of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/6/6a/Wands11.jpg", arcana: "Wands" },
       { name: "Knight of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/1/16/Wands12.jpg", arcana: "Wands" },
       { name: "Queen of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/0/0d/Wands13.jpg", arcana: "Wands" },
-      { name: "King of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/ce/ce/Wands14.jpg", arcana: "Wands" },
+      { name: "King of Wands", img: "https://upload.wikimedia.org/wikipedia/commons/c/ce/Wands14.jpg", arcana: "Wands" },
       { name: "Ace of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/3/36/Cups01.jpg", arcana: "Cups" },
       { name: "Two of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/f/f8/Cups02.jpg", arcana: "Cups" },
       { name: "Three of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/7/7a/Cups03.jpg", arcana: "Cups" },
@@ -732,7 +756,7 @@ select.app-field {
       { name: "Nine of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/2/24/Cups09.jpg", arcana: "Cups" },
       { name: "Ten of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/8/84/Cups10.jpg", arcana: "Cups" },
       { name: "Page of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/a/ad/Cups11.jpg", arcana: "Cups" },
-      { name: "Knight of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/fa/fa/Cups12.jpg", arcana: "Cups" },
+      { name: "Knight of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/f/fa/Cups12.jpg", arcana: "Cups" },
       { name: "Queen of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/6/62/Cups13.jpg", arcana: "Cups" },
       { name: "King of Cups", img: "https://upload.wikimedia.org/wikipedia/commons/0/04/Cups14.jpg", arcana: "Cups" },
       { name: "Ace of Swords", img: "https://upload.wikimedia.org/wikipedia/commons/1/1a/Swords01.jpg", arcana: "Swords" },
@@ -752,7 +776,7 @@ select.app-field {
       { name: "Ace of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/f/fd/Pents01.jpg", arcana: "Pentacles" },
       { name: "Two of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/9/9f/Pents02.jpg", arcana: "Pentacles" },
       { name: "Three of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/4/42/Pents03.jpg", arcana: "Pentacles" },
-      { name: "Four of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/3/3b/Pents04.jpg", arcana: "Pentacles" },
+      { name: "Four of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/3/35/Pents04.jpg", arcana: "Pentacles" },
       { name: "Five of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/9/96/Pents05.jpg", arcana: "Pentacles" },
       { name: "Six of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/a/a6/Pents06.jpg", arcana: "Pentacles" },
       { name: "Seven of Pentacles", img: "https://upload.wikimedia.org/wikipedia/commons/6/6a/Pents07.jpg", arcana: "Pentacles" },
@@ -1587,15 +1611,79 @@ Speak directly to me, maintaining a warm and grounded tone. Structure your respo
     // (often remote, sometimes slow) Wikimedia artwork actually loads, then
     // swaps it in with a brief reveal animation instead of a jarring pop-in.
     // Pure CSS animation — negligible cost even on an older phone.
+    //
+    // If the main link fails or stalls, it quietly tries the other sources from
+    // cardImageSources() and, as a last resort, shows a tap-to-retry message
+    // instead of leaving a blank card or a placeholder that shimmers forever.
+    const CARD_IMAGE_TIMEOUT_MS = 10000;
+    let cardImageToken = 0;
+    let cardImageTimer = null;
+
+    // Alternative places to fetch the same Wikimedia card, tried in order:
+    // 1) the stored original link, 2) a smaller standard-size thumbnail
+    // (lighter, and what Wikimedia recommends for hotlinking), 3) the Commons
+    // "Special:FilePath" link, which follows the file if it was renamed or moved.
+    function cardImageSources(url) {
+      const sources = [url];
+      // The first folder is always the first character of the second one
+      // (/f/ff/), so it's rebuilt from that — this also repairs a malformed
+      // link such as /ff/ff/ that may be stored in an older saved entry.
+      const m = /^https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/\w{1,2}\/(\w\w)\/([^/]+)$/.exec(url || "");
+      if (m) {
+        const file = m[2];
+        const good = `https://upload.wikimedia.org/wikipedia/commons/${m[1][0]}/${m[1]}/${file}`;
+        if (good !== url) sources.unshift(good);
+        sources.push(`https://upload.wikimedia.org/wikipedia/commons/thumb/${m[1][0]}/${m[1]}/${file}/330px-${file}`);
+        sources.push(`https://commons.wikimedia.org/wiki/Special:FilePath/${file}`);
+      }
+      return sources;
+    }
+
+    // Saved entries keep a copy of the card, including its image link from
+    // the day it was drawn. Prefer the deck's current link so a corrected
+    // link also fixes cards that were saved earlier.
+    function currentCardImg(card) {
+      const deckCard = RIDER_WAITE_DECK.find(c => c.name === card.name);
+      return deckCard ? deckCard.img : card.img;
+    }
+
+    function clearCardImage() {
+      const imgEl = document.getElementById("card-image");
+      cardImageToken++;
+      clearTimeout(cardImageTimer);
+      imgEl.onload = null;
+      imgEl.onerror = null;
+      imgEl.removeAttribute("src");
+      delete imgEl.dataset.cardSrc;
+      imgEl.style.display = "";
+      document.getElementById("card-skeleton").classList.add("hidden");
+      document.getElementById("card-image-error").classList.remove("is-visible");
+    }
+
+    function retryCardImage() {
+      const imgEl = document.getElementById("card-image");
+      const src = imgEl.dataset.cardSrc;
+      if (!src) return;
+      delete imgEl.dataset.cardSrc; // forces a fresh load instead of the "already loaded" shortcut
+      revealCardImage(src);
+    }
+
     function revealCardImage(src) {
       const imgEl = document.getElementById("card-image");
       const skeletonEl = document.getElementById("card-skeleton");
+      const errorEl = document.getElementById("card-image-error");
+
+      clearTimeout(cardImageTimer);
+      const token = ++cardImageToken;
 
       imgEl.classList.remove("card-reveal");
       imgEl.style.visibility = "hidden";
+      imgEl.style.display = "";
+      errorEl.classList.remove("is-visible");
       skeletonEl.classList.remove("hidden");
 
       const finish = () => {
+        clearTimeout(cardImageTimer);
         skeletonEl.classList.add("hidden");
         imgEl.style.visibility = "visible";
         // Restart the animation even if the same card is redrawn.
@@ -1603,14 +1691,50 @@ Speak directly to me, maintaining a warm and grounded tone. Structure your respo
         imgEl.classList.add("card-reveal");
       };
 
-      if (imgEl.src === src && imgEl.complete) {
+      // Already showing this exact card successfully (naturalWidth guards
+      // against a previously failed load that also reports "complete").
+      if (imgEl.dataset.cardSrc === src && imgEl.complete && imgEl.naturalWidth > 0) {
         finish();
         return;
       }
 
-      imgEl.onload = finish;
-      imgEl.onerror = finish;
-      imgEl.src = src;
+      const sources = cardImageSources(src);
+      let index = 0;
+      imgEl.dataset.cardSrc = src;
+
+      const fail = () => {
+        skeletonEl.classList.add("hidden");
+        imgEl.style.display = "none";
+        errorEl.classList.add("is-visible");
+      };
+
+      const tryNext = () => {
+        if (token !== cardImageToken) return; // a newer card was requested
+        clearTimeout(cardImageTimer);
+        if (index >= sources.length) {
+          fail();
+          return;
+        }
+        const current = sources[index++];
+        imgEl.onload = () => { if (token === cardImageToken) finish(); };
+        imgEl.onerror = tryNext;
+        cardImageTimer = setTimeout(tryNext, CARD_IMAGE_TIMEOUT_MS);
+        imgEl.src = current;
+      };
+
+      tryNext();
+    }
+
+    // Small history thumbnails share the same links, so give them the same
+    // fallback chain (one step per error).
+    function historyThumbFallback(imgEl) {
+      const sources = cardImageSources(imgEl.dataset.cardSrc);
+      const next = sources.indexOf(imgEl.getAttribute("src")) + 1; // not found -> start at 0
+      if (next < sources.length) {
+        imgEl.src = sources[next];
+      } else {
+        imgEl.onerror = null;
+      }
     }
 
     function loadEntryForDate() {
@@ -1624,7 +1748,7 @@ Speak directly to me, maintaining a warm and grounded tone. Structure your respo
 
       if (entry) {
         selectEl.value = entry.card.name;
-        revealCardImage(entry.card.img);
+        revealCardImage(currentCardImg(entry.card));
         // Entries saved before orientation existed have no field — treat
         // those as upright.
         updateOrientationUI(entry.orientation === "reversed" ? "reversed" : "upright", imgEl);
@@ -1633,7 +1757,7 @@ Speak directly to me, maintaining a warm and grounded tone. Structure your respo
         displayContainer.classList.remove("hidden");
       } else {
         selectEl.value = "";
-        imgEl.src = "";
+        clearCardImage();
         updateOrientationUI("upright", imgEl);
         document.getElementById("card-title-text").innerText = "";
         analysisText.innerText = "";
@@ -1671,7 +1795,7 @@ Speak directly to me, maintaining a warm and grounded tone. Structure your respo
 
         item.innerHTML = `
           <div class="flex items-center gap-3">
-            <img src="${entry.card.img}" class="history-thumb">
+            <img src="${currentCardImg(entry.card)}" data-card-src="${currentCardImg(entry.card)}" onerror="historyThumbFallback(this)" class="history-thumb">
             <div>
               <p class="text-xs font-bold app-heading">${formattedDate} <span class="app-subtle font-normal">(${dayOfWeek})</span></p>
               <p class="text-xs app-subtle font-medium">${entry.card.name}${entry.orientation === "reversed" ? " (Reversed)" : ""}</p>
