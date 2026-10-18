@@ -254,8 +254,7 @@ body {
    (see formatAIText()). Styling them here — bigger, gold, italic serif, with
    a small left tick — turns each one into its own quiet section heading
    without touching how the reading text itself is generated. */
-#ai-analysis-text strong,
-#astro-synergy-result strong {
+#ai-analysis-text strong {
   display: block;
   font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   font-style: italic;
@@ -267,8 +266,41 @@ body {
   padding-left: 0.65em;
   margin: 1.15em 0 0.4em;
 }
-#ai-analysis-text strong:first-child,
-#astro-synergy-result strong:first-child { margin-top: 0; }
+#ai-analysis-text strong:first-child { margin-top: 0; }
+
+/* Plain, easy-to-read layout for the long Astrology trend analysis.
+   Deliberately simple: normal flowing text, bold stays inline, headings are
+   just bold lines, lists are ordinary bullets. No display rule here, so the
+   shared .hidden class still works. */
+.plain-report {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--text-body);
+  overflow-wrap: anywhere;
+  scroll-margin-top: 5.5rem;
+  margin-bottom: 1.5rem;
+}
+.plain-report p { margin: 0 0 0.9em; }
+.plain-report h4 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-heading);
+  margin: 1.4em 0 0.4em;
+}
+.plain-report h4.report-title { margin-top: 0; font-size: 1.15rem; }
+.plain-report ul { margin: 0 0 0.9em; padding-left: 1.2em; }
+.plain-report li { margin: 0 0 0.45em; }
+.plain-report hr { border: none; border-top: 1px solid var(--border-soft); margin: 1.2em 0; }
+.plain-report .report-note { font-size: 0.8125rem; color: var(--text-muted); }
+.plain-report .report-end {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border-soft);
+  padding-top: 0.6em;
+  margin: 1.4em 0 0;
+}
+.plain-report .report-warn { color: #b4413a; font-weight: 600; }
 .app-heading { color: var(--text-heading); }
 .app-body-text { color: var(--text-body); }
 .app-subtle { color: var(--text-muted); }
@@ -635,7 +667,7 @@ select.app-field {
           Gemini 3.6 Flash is mapping your stored history… this can take up to a minute, please keep the app open.
         </div>
 
-        <div id="astro-synergy-result" class="hidden text-sm leading-relaxed app-body-text font-serif app-panel reading-panel p-4 rounded-lg mt-3 whitespace-pre-line">
+        <div id="astro-synergy-result" class="hidden plain-report app-panel p-4 rounded-lg mt-3">
         </div>
       </div>
     </section>
@@ -924,6 +956,80 @@ select.app-field {
       return escapeHtml(raw).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
     }
 
+    // Plain renderer for the long Astrology trend report. Gemini answers in
+    // everyday markdown (bold, *italics*, bullets, # headings, tables), so this
+    // turns those into simple paragraphs, bullet lists and bold headings that
+    // flow normally on a phone. Text is HTML-escaped first, so nothing the
+    // model returns can inject markup.
+    function formatPlainReport(raw) {
+      if (!raw) return "";
+      const inline = (s) => escapeHtml(s)
+        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+        .replace(/(^|[\s(])\*([^\s*](?:[^*\n]*?[^\s*])?)\*(?=$|[\s).,;:!?])/g, "$1<em>$2</em>");
+
+      let html = "";
+      let para = [];
+      let inList = false;
+      const flushPara = () => {
+        if (para.length) { html += "<p>" + para.join("<br>") + "</p>"; para = []; }
+      };
+      const closeList = () => {
+        if (inList) { html += "</ul>"; inList = false; }
+      };
+
+      String(raw).replace(/\r\n?/g, "\n").split("\n").forEach(line => {
+        const t = line.trim();
+        let m;
+        if (!t) { flushPara(); closeList(); return; }
+
+        if (/^(-{3,}|\*{3,}|_{3,})$/.test(t)) {              // --- rule
+          flushPara(); closeList(); html += "<hr>"; return;
+        }
+        if ((m = /^#{1,6}\s+(.*)$/.exec(t))) {                // # heading
+          flushPara(); closeList(); html += `<h4>${inline(m[1])}</h4>`; return;
+        }
+        if ((m = /^\*\*([^*]+?)\*\*:?$/.exec(t))) {           // **Whole line bold**
+          flushPara(); closeList(); html += `<h4>${inline(m[1])}</h4>`; return;
+        }
+        if (/^\|.*\|$/.test(t)) {                             // table row
+          if (/^\|[\s:|-]+\|$/.test(t)) return;               // |---|---| divider
+          flushPara(); closeList();
+          const cells = t.slice(1, -1).split("|").map(c => c.trim()).filter(Boolean);
+          html += `<p>${cells.map(inline).join(" — ")}</p>`;
+          return;
+        }
+        if ((m = /^[*+•-]\s+(.*)$/.exec(t))) {                // bullet
+          flushPara();
+          if (!inList) { html += "<ul>"; inList = true; }
+          html += `<li>${inline(m[1])}</li>`;
+          return;
+        }
+        if (/^\d+[.)]\s+/.test(t)) {                          // 1. numbered item
+          flushPara(); closeList(); html += `<p>${inline(t)}</p>`; return;
+        }
+        closeList();
+        para.push(inline(t));
+      });
+      flushPara();
+      closeList();
+      return html;
+    }
+
+    const ASTRO_CACHE_KEY = "astro_synergy_cache_v2"; // v2: older saved copies may be cut short
+
+    // Builds the full Astrology result panel: title, optional note, the report,
+    // and a closing line so it's obvious the whole analysis is on screen.
+    function buildAstroReportHtml(text, { note = "", finishReason = "" } = {}) {
+      const words = String(text).trim().split(/\s+/).length;
+      const incomplete = finishReason && finishReason !== "STOP";
+      return `<h4 class="report-title">Astrological &amp; Tarot Synergy Analysis</h4>`
+        + (note ? `<p class="report-note">${note}</p>` : "")
+        + formatPlainReport(text)
+        + (incomplete
+          ? `<p class="report-end report-warn">⚠️ Gemini stopped early (${escapeHtml(finishReason)}), so this analysis may be incomplete. <a href="#" onclick="generateAIAstroSynergy(true); return false;" style="text-decoration:underline;">Regenerate</a></p>`
+          : `<p class="report-end">End of analysis · ${words} words</p>`);
+    }
+
     // --- SHARED GEMINI API CALLER ---
     // Used by both the daily reading and the astro synergy analysis, so
     // fetch/timeout/error handling only needs to live in one place.
@@ -944,13 +1050,22 @@ select.app-field {
         if (data.error) {
           return { error: `Gemini API Error (${data.error.code}): ${data.error.message}` };
         }
-        const text = data.candidates && data.candidates[0] && data.candidates[0].content
-          && data.candidates[0].content.parts && data.candidates[0].content.parts[0]
-          && data.candidates[0].content.parts[0].text;
-        if (!text) {
-          return { error: "Gemini returned an empty response." };
+        // A reply can arrive as several parts (long answers, thinking models).
+        // Join every text part, not just the first, or the rest is lost.
+        const candidate = data.candidates && data.candidates[0];
+        const parts = (candidate && candidate.content && candidate.content.parts) || [];
+        const text = parts
+          .filter(p => p && typeof p.text === "string" && !p.thought)
+          .map(p => p.text)
+          .join("");
+        if (!text.trim()) {
+          const reason = (data.promptFeedback && data.promptFeedback.blockReason)
+            || (candidate && candidate.finishReason);
+          return { error: reason ? `Gemini returned no text (${reason}).` : "Gemini returned an empty response." };
         }
-        return { text };
+        // finishReason is "STOP" when the model finished normally; anything
+        // else (e.g. MAX_TOKENS, SAFETY) means the text may be cut short.
+        return { text, finishReason: candidate && candidate.finishReason };
       } catch (err) {
         if (err.name === "AbortError") {
           return { error: "Request timed out contacting Gemini API. Please try again." };
@@ -1905,14 +2020,17 @@ Speak directly to me, maintaining a warm and grounded tone. Structure your respo
       const signature = computeAstroSignature(windowSize, cardHistory, natalChart);
       let cached = null;
       try {
-        cached = JSON.parse(localStorage.getItem("astro_synergy_cache") || "null");
+        cached = JSON.parse(localStorage.getItem(ASTRO_CACHE_KEY) || "null");
       } catch (err) {
         cached = null;
       }
 
       if (!forceRefresh && cached && cached.signature === signature) {
-        container.innerHTML = `<p class="text-[10px] app-subtle mb-2">Showing your last analysis — no new draws since it was generated. <a href="#" onclick="generateAIAstroSynergy(true); return false;" style="text-decoration:underline;">Regenerate anyway</a></p><strong>Astrological & Tarot Synergy Analysis:</strong><br><br>${formatAIText(cached.result)}`;
+        container.innerHTML = buildAstroReportHtml(cached.result, {
+          note: `Showing your last analysis — no new draws since it was generated. <a href="#" onclick="generateAIAstroSynergy(true); return false;" style="text-decoration:underline;">Regenerate anyway</a>`
+        });
         container.classList.remove("hidden");
+        showAstroResult(container);
         return;
       }
 
@@ -1948,14 +2066,31 @@ Analyze this tarot draw history against the natal chart above and provide a deta
         return;
       }
 
-      try {
-        localStorage.setItem("astro_synergy_cache", JSON.stringify({ signature, result: result.text }));
-      } catch (err) {
-        console.warn("Couldn't cache the astro synergy result:", err);
+      // Only keep complete analyses; a cut-short one shouldn't be served again
+      // as if it were the finished result.
+      const finishedNormally = !result.finishReason || result.finishReason === "STOP";
+      if (finishedNormally) {
+        try {
+          localStorage.setItem(ASTRO_CACHE_KEY, JSON.stringify({ signature, result: result.text }));
+          localStorage.removeItem("astro_synergy_cache"); // old, possibly truncated copy
+        } catch (err) {
+          console.warn("Couldn't cache the astro synergy result:", err);
+        }
       }
 
-      container.innerHTML = `<strong>Astrological & Tarot Synergy Analysis:</strong><br><br>${formatAIText(result.text)}`;
+      container.innerHTML = buildAstroReportHtml(result.text, { finishReason: result.finishReason });
       container.classList.remove("hidden");
+      showAstroResult(container);
+    }
+
+    // Brings the top of the result into view (below the sticky header) so the
+    // report starts where you read it from, not wherever the button was.
+    function showAstroResult(container) {
+      try {
+        container.scrollIntoView({ behavior: "smooth", block: "start" });
+      } catch (err) {
+        container.scrollIntoView();
+      }
     }
 
     // html2pdf.js (~400KB) is only needed if the user actually exports a PDF,
